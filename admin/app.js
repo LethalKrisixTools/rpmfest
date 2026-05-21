@@ -195,14 +195,26 @@ function notify(msg, type = 'success') {
   setTimeout(() => el.remove(), 3500);
 }
 
+// ========== COLLECT DATA FROM FORM ==========
+
+function collectData() {
+  const tab = currentTab;
+  if (tab === 'evento') collectEvento();
+  else if (tab === 'hero') collectHero();
+  else if (tab === 'actividades') collectActividades();
+  else if (tab === 'horarios') collectHorarios();
+  else if (tab === 'stats') collectStats();
+  else if (tab === 'sponsors') collectSponsors();
+}
+
 // ========== SAVE TO GITHUB ==========
 
 $('btn-save').addEventListener('click', async () => {
-  collectData();
   $('btn-save').textContent = 'Publicando...';
   $('btn-save').disabled = true;
 
   try {
+    collectData();
     await saveToGitHub();
     notify('Cambios publicados en GitHub ✅');
 
