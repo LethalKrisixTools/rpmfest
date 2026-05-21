@@ -219,7 +219,7 @@ async function saveToGitHub() {
 $('btn-preview').addEventListener('click', () => {
   const overlay = $('preview-overlay');
   overlay.classList.remove('hidden');
-  $('preview-iframe').src = '../index.html';
+    $('preview-iframe').src = 'index.html';
 });
 
 $('btn-close-preview').addEventListener('click', () => {
