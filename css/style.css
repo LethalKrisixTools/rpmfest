@@ -260,6 +260,25 @@ img {
   background: var(--bg-dark);
 }
 
+.section-fourvenues {
+  padding: 60px 0;
+  background: var(--bg-main);
+}
+
+.fv-widget {
+  min-height: 200px;
+  max-height: 480px;
+  overflow-y: auto;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.fv-widget iframe {
+  max-width: 100% !important;
+}
+
 .section-header {
   text-align: center;
   max-width: 640px;
