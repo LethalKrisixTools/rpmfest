@@ -320,6 +320,10 @@ img {
   background: var(--bg-main);
 }
 
+.first-section {
+  padding-top: calc(var(--section-gap) + 64px);
+}
+
 .section-header {
   text-align: center;
   max-width: 640px;
