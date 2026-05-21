@@ -337,5 +337,10 @@
   </footer>
 
   <script src="js/data-loader.js"></script>
+  <script>
+    document.querySelectorAll('.fv-widget').forEach(w => {
+      w.addEventListener('wheel', e => e.stopPropagation(), { passive: true });
+    });
+  </script>
 </body>
 </html>

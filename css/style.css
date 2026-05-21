@@ -269,6 +269,7 @@ img {
   min-height: 200px;
   max-height: 480px;
   overflow-y: auto;
+  overscroll-behavior: contain;
   background: var(--bg-dark);
   border: 1px solid var(--border);
   border-radius: 8px;
