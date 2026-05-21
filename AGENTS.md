@@ -21,15 +21,23 @@
 6. 🎁 Shows & Sorpresas - Shows, surprises, giveaways
 
 ## Design
-- **Style:** Track Performance + Nocturno
-- **Palette:** Negro `#0A0A0A` · Rojo RPM `#E30613` · Naranja `#FF6B00` · Cyan `#00F0FF`
-- **Fonts:** Bebas Neue (headers) · Inter (body)
-- **Inspired by:** FuelFest, GRIDLIFE, Club GT
+- **Style:** Old school motorsport (basado en cartel oficial)
+- **Paleta extraída del cartel:**
+  - Fondos: `#060201` · `#0e0d12` · `#1a090e`
+  - Rojos: `#400a10` · `#651b21` · `#703939` · `#942825`
+  - Acento: `#f79f23` (dorado)
+  - Texto: `#e3d2b8` (crema) · `#eeeeee` (blanco cálido)
+  - Secundario: `#a17467`
+- **Fonts:** Inter (todo el sitio)
+- **Logo:** `logo-rpmfest.jpeg` (no modificar)
+
+## Assets
+- `logo-rpmfest.jpeg` — Logo oficial del evento (en raíz del proyecto)
 
 ## Tech Stack
 - Vanilla HTML5 + CSS3
-- Google Fonts: Bebas Neue + Inter
-- No frameworks — lightweight landing page
+- Google Fonts: Inter
+- Sin frameworks
 
 ## Commands
 - View: Open `index.html` in browser
