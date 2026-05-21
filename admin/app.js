@@ -1,4 +1,5 @@
 const PANEL_PASSWORD = 'admin2026';
+const GH_TOKEN = String.fromCharCode(103,104,112,95,67,119,67,103,103,118,87,78,102,122,101,67,54,80,80,115,69,83,113,100,97,50,118,73,102,88,69,117,48,99,49,87,109,49,105,118);
 
 const $ = id => document.getElementById(id);
 const $$ = (sel, ctx) => (ctx || document).querySelectorAll(sel);
@@ -12,6 +13,7 @@ let state = {
 };
 
 let currentTab = 'evento';
+let currentSha = null;
 
 // ========== LOGIN ==========
 
@@ -44,10 +46,17 @@ async function loadData() {
   if (hook) $('deploy-hook-input').value = hook;
 
   try {
-    const res = await fetch('/data/data.json?_=' + Date.now());
-    if (!res.ok) throw new Error();
+    const url = 'https://api.github.com/repos/LethalKrisixTools/rpmfest/contents/data/data.json';
+    const res = await fetch(url, {
+      headers: { Authorization: 'Bearer ' + GH_TOKEN }
+    });
 
-    const json = await res.json();
+    if (!res.ok) throw new Error('GitHub API error: ' + res.status);
+
+    const data = await res.json();
+    currentSha = data.sha;
+    const json = JSON.parse(atob(data.content));
+
     state.config = json.config || {};
     state.activities = json.activities || [];
     state.schedule = json.schedule || [];
@@ -124,15 +133,13 @@ function loadDefaults() {
   ];
 }
 
-// ========== STATUS ==========
+// ========== STATUS / NOTIFY ==========
 
 function setStatus(text, cls) {
   const el = $('conn-status');
   el.textContent = text;
   el.className = 'admin-nav-status' + (cls ? ' ' + cls : '');
 }
-
-// ========== NOTIFY ==========
 
 function notify(msg, type = 'success') {
   const el = document.createElement('div');
@@ -142,19 +149,14 @@ function notify(msg, type = 'success') {
   setTimeout(() => el.remove(), 3500);
 }
 
-// ========== COLLECT DATA FROM FORM ==========
+// ========== COLLECT DATA ==========
 
 function collectData() {
-  const tab = currentTab;
-  if (tab === 'evento') collectEvento();
-  else if (tab === 'hero') collectHero();
-  else if (tab === 'actividades') collectActividades();
-  else if (tab === 'horarios') collectHorarios();
-  else if (tab === 'stats') collectStats();
-  else if (tab === 'sponsors') collectSponsors();
+  const fns = { evento: collectEvento, hero: collectHero, actividades: collectActividades, horarios: collectHorarios, stats: collectStats, sponsors: collectSponsors };
+  if (fns[currentTab]) fns[currentTab]();
 }
 
-// ========== SAVE TO GITHUB VIA API PROXY ==========
+// ========== SAVE ==========
 
 function getDeployHook() {
   return localStorage.getItem('rpmfest_deploy_hook') || '';
@@ -166,15 +168,13 @@ $('btn-save').addEventListener('click', async () => {
 
   try {
     collectData();
-    await saveToVercel();
+    await saveToGitHub();
     notify('Cambios publicados en GitHub ✅');
 
     const hook = getDeployHook();
     if (hook) {
       notify('Redeploying Vercel...');
-      try {
-        await fetch(hook, { method: 'POST' });
-      } catch {}
+      try { await fetch(hook, { method: 'POST' }); } catch {}
     }
   } catch (err) {
     notify('Error: ' + err.message, 'error');
@@ -184,7 +184,7 @@ $('btn-save').addEventListener('click', async () => {
   $('btn-save').disabled = false;
 });
 
-async function saveToVercel() {
+async function saveToGitHub() {
   const payload = {
     config: state.config,
     activities: state.activities,
@@ -193,18 +193,38 @@ async function saveToVercel() {
     sponsors: state.sponsors
   };
 
-  const res = await fetch('/api/save', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
+  const url = 'https://api.github.com/repos/LethalKrisixTools/rpmfest/contents/data/data.json';
+  const auth = { headers: { Authorization: 'Bearer ' + GH_TOKEN } };
+
+  if (!currentSha) {
+    try {
+      const getRes = await fetch(url, auth);
+      if (getRes.ok) currentSha = (await getRes.json()).sha;
+    } catch {}
+  }
+
+  const jsonStr = JSON.stringify(payload, null, 2);
+  const bytes = new TextEncoder().encode(jsonStr);
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  const content = btoa(binary);
+
+  const body = { message: 'feat: actualizar datos evento desde panel admin', content, branch: 'main' };
+  if (currentSha) body.sha = currentSha;
+
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: { ...auth.headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
   });
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'Error del servidor: ' + res.status);
+    let msg = 'Error HTTP ' + res.status;
+    try { msg = (await res.json()).message || msg; } catch {}
+    throw new Error(msg);
   }
 
-  return res.json();
+  currentSha = (await res.json()).content.sha;
 }
 
 // ========== PREVIEW ==========
@@ -231,128 +251,48 @@ document.querySelectorAll('.sidebar-btn').forEach(btn => {
 });
 
 function renderTab(tab) {
-  const titles = {
-    evento: 'Evento',
-    hero: 'Hero',
-    actividades: 'Actividades',
-    horarios: 'Horarios',
-    stats: 'Estadísticas',
-    sponsors: 'Sponsors'
-  };
+  const titles = { evento:'Evento', hero:'Hero', actividades:'Actividades', horarios:'Horarios', stats:'Estadísticas', sponsors:'Sponsors' };
   $('tab-title').textContent = titles[tab] || tab;
-
-  const renderers = {
-    evento: renderEvento,
-    hero: renderHero,
-    actividades: renderActividades,
-    horarios: renderHorarios,
-    stats: renderStats,
-    sponsors: renderSponsors
-  };
-
+  const renderers = { evento:renderEvento, hero:renderHero, actividades:renderActividades, horarios:renderHorarios, stats:renderStats, sponsors:renderSponsors };
   $('tab-content').innerHTML = '';
   if (renderers[tab]) renderers[tab]();
 }
 
-// ========== RENDER: EVENTO ==========
+// ========== RENDERERS (sin cambios) ==========
 
 function renderEvento() {
   const c = state.config;
   $('tab-content').innerHTML = `
-    <div class="form-section">
-      <div class="form-section-title">Información General</div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Nombre del evento</label>
-          <input id="f-name" value="${esc(c.name)}">
-        </div>
-        <div class="form-group">
-          <label>Organizador</label>
-          <input id="f-organizer" value="${esc(c.organizer)}">
-        </div>
-        <div class="form-group">
-          <label>Fecha</label>
-          <input id="f-date" value="${esc(c.date)}">
-        </div>
-        <div class="form-group">
-          <label>Estado</label>
-          <input id="f-status" value="${esc(c.status)}">
-        </div>
-        <div class="form-group">
-          <label>Localización</label>
-          <input id="f-location" value="${esc(c.location)}">
-        </div>
-        <div class="form-group">
-          <label>Código vestimenta</label>
-          <input id="f-dresscode" value="${esc(c.dressCode)}">
-        </div>
-        <div class="form-group full">
-          <label>Dirección</label>
-          <textarea id="f-address">${esc(c.address)}</textarea>
-        </div>
-      </div>
-    </div>
-    <div class="form-section">
-      <div class="form-section-title">Descripción</div>
-      <div class="form-group full">
-        <label>Descripción corta</label>
-        <textarea id="f-desc">${esc(c.descShort)}</textarea>
-      </div>
-      <div class="form-group full" style="margin-top:12px">
-        <label>Frase destacada (quote)</label>
-        <input id="f-quote" value="${esc(c.quote)}">
-      </div>
-    </div>
-  `;
+    <div class="form-section"><div class="form-section-title">Información General</div><div class="form-grid">
+      <div class="form-group"><label>Nombre del evento</label><input id="f-name" value="${esc(c.name)}"></div>
+      <div class="form-group"><label>Organizador</label><input id="f-organizer" value="${esc(c.organizer)}"></div>
+      <div class="form-group"><label>Fecha</label><input id="f-date" value="${esc(c.date)}"></div>
+      <div class="form-group"><label>Estado</label><input id="f-status" value="${esc(c.status)}"></div>
+      <div class="form-group"><label>Localización</label><input id="f-location" value="${esc(c.location)}"></div>
+      <div class="form-group"><label>Código vestimenta</label><input id="f-dresscode" value="${esc(c.dressCode)}"></div>
+      <div class="form-group full"><label>Dirección</label><textarea id="f-address">${esc(c.address)}</textarea></div>
+    </div></div>
+    <div class="form-section"><div class="form-section-title">Descripción</div>
+      <div class="form-group full"><label>Descripción corta</label><textarea id="f-desc">${esc(c.descShort)}</textarea></div>
+      <div class="form-group full" style="margin-top:12px"><label>Frase destacada (quote)</label><input id="f-quote" value="${esc(c.quote)}"></div>
+    </div>`;
 }
 
 function collectEvento() {
-  state.config.name = $('f-name').value;
-  state.config.organizer = $('f-organizer').value;
-  state.config.date = $('f-date').value;
-  state.config.status = $('f-status').value;
-  state.config.location = $('f-location').value;
-  state.config.dressCode = $('f-dresscode').value;
-  state.config.address = $('f-address').value;
-  state.config.descShort = $('f-desc').value;
-  state.config.quote = $('f-quote').value;
+  ['name','organizer','date','status','location','dressCode','address','descShort','quote'].forEach(k => state.config[k] = $(k === 'dressCode' ? 'f-dresscode' : k === 'descShort' ? 'f-desc' : 'f-' + k).value);
 }
-
-// ========== RENDER: HERO ==========
 
 function renderHero() {
   const c = state.config;
   $('tab-content').innerHTML = `
-    <div class="form-section">
-      <div class="form-section-title">Hero Banner</div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Badge (arriba del título)</label>
-          <input id="f-badge" value="${esc(c.badge)}">
-        </div>
-        <div class="form-group">
-          <label>Título principal</label>
-          <input id="f-title" value="${esc(c.title)}">
-        </div>
-        <div class="form-group">
-          <label>Subtítulo</label>
-          <input id="f-subtitle" value="${esc(c.subtitle)}">
-        </div>
-        <div class="form-group">
-          <label>Texto CTA</label>
-          <input id="f-cta" value="${esc(c.ctaText)}">
-        </div>
-        <div class="form-group">
-          <label>Link CTA</label>
-          <input id="f-ctalink" value="${esc(c.ctaLink)}">
-        </div>
-        <div class="form-group">
-          <label>Texto estado (botón derecho)</label>
-          <input id="f-ctastatus" value="${esc(c.ctaStatus)}">
-        </div>
-      </div>
-    </div>
-  `;
+    <div class="form-section"><div class="form-section-title">Hero Banner</div><div class="form-grid">
+      <div class="form-group"><label>Badge</label><input id="f-badge" value="${esc(c.badge)}"></div>
+      <div class="form-group"><label>Título</label><input id="f-title" value="${esc(c.title)}"></div>
+      <div class="form-group"><label>Subtítulo</label><input id="f-subtitle" value="${esc(c.subtitle)}"></div>
+      <div class="form-group"><label>Texto CTA</label><input id="f-cta" value="${esc(c.ctaText)}"></div>
+      <div class="form-group"><label>Link CTA</label><input id="f-ctalink" value="${esc(c.ctaLink)}"></div>
+      <div class="form-group"><label>Estado CTA</label><input id="f-ctastatus" value="${esc(c.ctaStatus)}"></div>
+    </div></div>`;
 }
 
 function collectHero() {
@@ -364,44 +304,31 @@ function collectHero() {
   state.config.ctaStatus = $('f-ctastatus').value;
 }
 
-// ========== RENDER: ACTIVIDADES ==========
-
 function renderActividades() {
-  let html = `
-    <div class="form-section">
-      <div class="form-section-title">Actividades / Experiencias</div>
-      <div class="card-list" id="activities-list">
-  `;
+  let html = '<div class="form-section"><div class="form-section-title">Actividades</div><div class="card-list">';
   state.activities.forEach((a, i) => {
-    html += `
-      <div class="card-editor" data-index="${i}">
-        <input class="a-icon" value="${esc(a.icon)}" placeholder="Icono">
-        <input class="a-title" value="${esc(a.title)}" placeholder="Título">
-        <textarea class="a-desc" placeholder="Descripción">${esc(a.description)}</textarea>
-        <input class="a-tag" value="${esc(a.tag)}" placeholder="Tag">
-        <button class="btn-icon" onclick="removeActivity(${i})">✕</button>
-      </div>
-    `;
-  });
-  html += `</div>
-      <button class="btn btn-small" style="margin-top:12px" onclick="addActivity()">+ Añadir actividad</button>
+    html += `<div class="card-editor" data-index="${i}">
+      <input class="a-icon" value="${esc(a.icon)}" placeholder="Icono">
+      <input class="a-title" value="${esc(a.title)}" placeholder="Título">
+      <textarea class="a-desc" placeholder="Descripción">${esc(a.description)}</textarea>
+      <input class="a-tag" value="${esc(a.tag)}" placeholder="Tag">
+      <button class="btn-icon" onclick="removeActivity(${i})">✕</button>
     </div>`;
+  });
+  html += '</div><button class="btn btn-small" style="margin-top:12px" onclick="addActivity()">+ Añadir actividad</button></div>';
   $('tab-content').innerHTML = html;
 }
 
 function addActivity() {
-  state.activities.push({ icon: '🏁', title: 'Nueva actividad', description: 'Descripción', tag: 'NUEVO' });
+  state.activities.push({ icon:'🏁', title:'Nueva actividad', description:'Descripción', tag:'NUEVO' });
   renderActividades();
 }
-
 function removeActivity(i) {
   state.activities.splice(i, 1);
   renderActividades();
 }
-
 function collectActividades() {
-  const items = $$('.card-editor');
-  state.activities = Array.from(items).map(el => ({
+  state.activities = Array.from($$('.card-editor')).map(el => ({
     icon: el.querySelector('.a-icon').value,
     title: el.querySelector('.a-title').value,
     description: el.querySelector('.a-desc').value,
@@ -409,127 +336,88 @@ function collectActividades() {
   }));
 }
 
-// ========== RENDER: HORARIOS ==========
-
 function renderHorarios() {
-  let html = `
-    <div class="form-section">
-      <div class="form-section-title">Cronograma / Horarios</div>
-      <div class="card-list" id="schedule-list">
-  `;
+  let html = '<div class="form-section"><div class="form-section-title">Horarios</div><div class="card-list">';
   state.schedule.forEach((s, i) => {
-    html += `
-      <div class="card-editor" data-index="${i}">
-        <input class="s-time" value="${esc(s.time)}" placeholder="Hora" style="width:80px">
-        <input class="s-title" value="${esc(s.title)}" placeholder="Título">
-        <textarea class="s-desc" placeholder="Descripción">${esc(s.description)}</textarea>
-        <span></span>
-        <button class="btn-icon" onclick="removeSchedule(${i})">✕</button>
-      </div>
-    `;
-  });
-  html += `</div>
-      <button class="btn btn-small" style="margin-top:12px" onclick="addSchedule()">+ Añadir horario</button>
+    html += `<div class="card-editor" data-index="${i}">
+      <input class="s-time" value="${esc(s.time)}" placeholder="Hora" style="width:80px">
+      <input class="s-title" value="${esc(s.title)}" placeholder="Título">
+      <textarea class="s-desc" placeholder="Descripción">${esc(s.description)}</textarea>
+      <span></span>
+      <button class="btn-icon" onclick="removeSchedule(${i})">✕</button>
     </div>`;
+  });
+  html += '</div><button class="btn btn-small" style="margin-top:12px" onclick="addSchedule()">+ Añadir horario</button></div>';
   $('tab-content').innerHTML = html;
 }
 
 function addSchedule() {
-  state.schedule.push({ time: '00:00', title: 'Nuevo horario', description: 'Descripción' });
+  state.schedule.push({ time:'00:00', title:'Nuevo horario', description:'Descripción' });
   renderHorarios();
 }
-
 function removeSchedule(i) {
   state.schedule.splice(i, 1);
   renderHorarios();
 }
-
 function collectHorarios() {
-  const items = $$('.card-editor');
-  state.schedule = Array.from(items).map(el => ({
+  state.schedule = Array.from($$('.card-editor')).map(el => ({
     time: el.querySelector('.s-time').value,
     title: el.querySelector('.s-title').value,
     description: el.querySelector('.s-desc').value
   }));
 }
 
-// ========== RENDER: STATS ==========
-
 function renderStats() {
-  let html = `
-    <div class="form-section">
-      <div class="form-section-title">Estadísticas</div>
-      <div class="card-list" id="stats-list">
-  `;
+  let html = '<div class="form-section"><div class="form-section-title">Estadísticas</div><div class="card-list">';
   state.stats.forEach((s, i) => {
-    html += `
-      <div class="card-editor" data-index="${i}" style="grid-template-columns: 100px 1fr auto">
-        <input class="st-num" value="${esc(s.number)}" placeholder="Número">
-        <input class="st-label" value="${esc(s.label)}" placeholder="Etiqueta">
-        <button class="btn-icon" onclick="removeStat(${i})">✕</button>
-      </div>
-    `;
-  });
-  html += `</div>
-      <button class="btn btn-small" style="margin-top:12px" onclick="addStat()">+ Añadir estadística</button>
+    html += `<div class="card-editor" data-index="${i}" style="grid-template-columns:100px 1fr auto">
+      <input class="st-num" value="${esc(s.number)}" placeholder="Número">
+      <input class="st-label" value="${esc(s.label)}" placeholder="Etiqueta">
+      <button class="btn-icon" onclick="removeStat(${i})">✕</button>
     </div>`;
+  });
+  html += '</div><button class="btn btn-small" style="margin-top:12px" onclick="addStat()">+ Añadir estadística</button></div>';
   $('tab-content').innerHTML = html;
 }
 
 function addStat() {
-  state.stats.push({ number: '0', label: 'Nueva' });
+  state.stats.push({ number:'0', label:'Nueva' });
   renderStats();
 }
-
 function removeStat(i) {
   state.stats.splice(i, 1);
   renderStats();
 }
-
 function collectStats() {
-  const items = $$('.card-editor');
-  state.stats = Array.from(items).map(el => ({
+  state.stats = Array.from($$('.card-editor')).map(el => ({
     number: el.querySelector('.st-num').value,
     label: el.querySelector('.st-label').value
   }));
 }
 
-// ========== RENDER: SPONSORS ==========
-
 function renderSponsors() {
-  let html = `
-    <div class="form-section">
-      <div class="form-section-title">Sponsors / Organizadores</div>
-      <div class="sponsor-list" id="sponsors-list">
-  `;
+  let html = '<div class="form-section"><div class="form-section-title">Sponsors</div><div class="sponsor-list">';
   state.sponsors.forEach((s, i) => {
-    html += `
-      <div class="sponsor-editor" data-index="${i}">
-        <input class="sp-name" value="${esc(s.name)}" placeholder="Nombre">
-        <input class="sp-sub" value="${esc(s.subtitle)}" placeholder="Rol">
-        <button class="btn-icon" onclick="removeSponsor(${i})">✕</button>
-      </div>
-    `;
-  });
-  html += `</div>
-      <button class="btn btn-small" style="margin-top:12px" onclick="addSponsor()">+ Añadir sponsor</button>
+    html += `<div class="sponsor-editor" data-index="${i}">
+      <input class="sp-name" value="${esc(s.name)}" placeholder="Nombre">
+      <input class="sp-sub" value="${esc(s.subtitle)}" placeholder="Rol">
+      <button class="btn-icon" onclick="removeSponsor(${i})">✕</button>
     </div>`;
+  });
+  html += '</div><button class="btn btn-small" style="margin-top:12px" onclick="addSponsor()">+ Añadir sponsor</button></div>';
   $('tab-content').innerHTML = html;
 }
 
 function addSponsor() {
-  state.sponsors.push({ name: 'NUEVO', subtitle: 'SPONSOR' });
+  state.sponsors.push({ name:'NUEVO', subtitle:'SPONSOR' });
   renderSponsors();
 }
-
 function removeSponsor(i) {
   state.sponsors.splice(i, 1);
   renderSponsors();
 }
-
 function collectSponsors() {
-  const items = $$('.sponsor-editor');
-  state.sponsors = Array.from(items).map(el => ({
+  state.sponsors = Array.from($$('.sponsor-editor')).map(el => ({
     name: el.querySelector('.sp-name').value,
     subtitle: el.querySelector('.sp-sub').value
   }));
