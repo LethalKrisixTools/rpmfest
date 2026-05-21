@@ -320,16 +320,6 @@ img {
   background: var(--bg-main);
 }
 
-.first-section {
-  padding-top: 220px !important;
-}
-
-@media (max-width: 768px) {
-  .first-section {
-    padding-top: 200px !important;
-  }
-}
-
 .section-header {
   text-align: center;
   max-width: 640px;
@@ -913,5 +903,15 @@ img {
 
   .hero-logo-wrap img {
     max-width: 280px;
+  }
+}
+
+.first-section {
+  padding-top: 220px;
+}
+
+@media (max-width: 768px) {
+  .first-section {
+    padding-top: 200px;
   }
 }
