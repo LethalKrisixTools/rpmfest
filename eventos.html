@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RPM Fest — Próximos Eventos</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo">
+        <img src="logo-rpmfest.png" alt="RPM Fest" class="nav-logo-img">
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html#evento">Evento</a></li>
+        <li><a href="index.html#experiencias">Experiencias</a></li>
+        <li><a href="index.html#horarios">Horarios</a></li>
+        <li><a href="index.html#ubicacion">Ubicación</a></li>
+        <li><a href="eventos.html" class="active">Próximos Eventos</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <section class="section section-fourvenues">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">FOURVENUES</span>
+        <h2 class="section-title">Próximos <span class="gold">Eventos</span></h2>
+      </div>
+      <div class="fv-widget">
+        <script src="https://www.fourvenues.com/assets/iframe/diamond-squad-events/events"></script>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-fourvenues">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">CALENDARIO</span>
+        <h2 class="section-title">No te pierdas <span class="gold">ninguno</span></h2>
+      </div>
+      <div class="fv-widget">
+        <script src="https://www.fourvenues.com/assets/iframe/diamond-squad-events/calendar@"></script>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-main">
+        <div class="footer-brand">
+          <div class="footer-logo">RPM<span class="gold">FEST</span></div>
+          <p class="footer-desc">Un festival del motor como ningún otro. Organizado por Diamond Squad Events.</p>
+        </div>
+        <div class="footer-links-col">
+          <h4>Legal</h4>
+          <a href="https://web.fourvenues.com/es/legal/aviso-legal" target="_blank">Aviso Legal</a>
+          <a href="https://web.fourvenues.com/es/legal/politica-de-cookies" target="_blank">Política de Cookies</a>
+          <a href="https://web.fourvenues.com/es/legal/politica-de-privacidad" target="_blank">Política de Privacidad</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Diamond Squad Events. Todos los derechos reservados.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.querySelectorAll('.fv-widget').forEach(w => {
+      w.addEventListener('wheel', e => e.stopPropagation(), { passive: true });
+    });
+  </script>
+</body>
+</html>
