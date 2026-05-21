@@ -29,10 +29,10 @@
   - Texto: `#e3d2b8` (crema) · `#eeeeee` (blanco cálido)
   - Secundario: `#a17467`
 - **Fonts:** Inter (todo el sitio)
-- **Logo:** `logo-rpmfest.jpeg` (no modificar)
+- **Logo:** `logo-rpmfest.png` (no modificar)
 
 ## Assets
-- `logo-rpmfest.jpeg` — Logo oficial del evento (en raíz del proyecto)
+- `logo-rpmfest.png` — Logo oficial del evento (en raíz del proyecto)
 
 ## Tech Stack
 - Vanilla HTML5 + CSS3
