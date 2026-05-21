@@ -53,9 +53,12 @@ async function loadData() {
 
     if (!res.ok) throw new Error('GitHub API error: ' + res.status);
 
-    const data = await res.json();
-    currentSha = data.sha;
-    const json = JSON.parse(atob(data.content));
+    const d = await res.json();
+    currentSha = d.sha;
+    const binary = atob(d.content);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const json = JSON.parse(new TextDecoder().decode(bytes));
 
     state.config = json.config || {};
     state.activities = json.activities || [];
