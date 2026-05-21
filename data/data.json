@@ -1,0 +1,47 @@
+{
+  "config": {
+    "name": "RPM FEST",
+    "organizer": "Diamond Squad Events",
+    "date": "Sábado 16 de Mayo · 10:00",
+    "location": "Circuito Internacional FK1",
+    "address": "Ctra. Comarcal, 602, 47465\nVillaverde de Medina, Valladolid",
+    "status": "finalizado",
+    "dressCode": "Casual",
+    "badge": "DIAMOND SQUAD EVENTS",
+    "title": "RPM FEST",
+    "subtitle": "Sábado 16 de Mayo · 10:00 · Circuito FK1",
+    "ctaText": "EXPLORAR EVENTO",
+    "ctaLink": "#experiencias",
+    "ctaStatus": "FINALIZADO",
+    "descShort": "RPM Fest no es solo una concentración de coches. Es un festival donde el rugido de los motores, la música en directo y el ambiente brutal se fusionan en un día inolvidable en el Circuito FK1.",
+    "quote": "RPM Fest no es solo una concentración… es un festival del motor."
+  },
+  "activities": [
+    { "icon": "🎤", "title": "Escenario en Directo", "description": "Artistas en vivo durante toda la jornada. Música y actuaciones para que el festival no pare ni un momento.", "tag": "MÚSICA" },
+    { "icon": "🚗", "title": "Zona Expo", "description": "Coches preparados, deportivos, clásicos y proyectos exclusivos. Ideal para inspirarte, hacer fotos y conocer a otros apasionados.", "tag": "EXPOSICIÓN" },
+    { "icon": "🏆", "title": "Batalla de Clubs", "description": "Los clubs compiten por demostrar quién tiene el mejor proyecto, más estilo y presencia. Pasión por el motor en estado puro.", "tag": "COMPETICIÓN" },
+    { "icon": "🚀", "title": "Lanzadas", "description": "Potencia pura en acción. Aceleraciones que ponen los pelos de punta y máquinas sacando todo su potencial en pista.", "tag": "VELOCIDAD" },
+    { "icon": "🔥", "title": "Grip & Drift", "description": "Tandas de agarre y derrapes espectaculares. Humo, ruido, técnica y espectáculo asegurado para los fans del drifting.", "tag": "DRIFT" },
+    { "icon": "🎁", "title": "Shows & Sorpresas", "description": "Animación constante, exhibiciones y regalos para el público. Aquí siempre están pasando cosas.", "tag": "SHOW" }
+  ],
+  "schedule": [
+    { "time": "10:00", "title": "Apertura de Puertas", "description": "Comienza la fiesta. Acceso al recinto, acreditaciones y primer contacto con la zona expo." },
+    { "time": "11:00", "title": "Inicio Zona Expo", "description": "Apertura oficial de la exposición de coches. Primeros pases por la pista." },
+    { "time": "12:00", "title": "Lanzadas — Sesión 1", "description": "Primeras aceleraciones en pista. Potencia pura en acción." },
+    { "time": "14:00", "title": "Música en Directo", "description": "Actuaciones musicales. El escenario principal cobra vida." },
+    { "time": "16:00", "title": "Batalla de Clubs", "description": "Los clubs compiten por el mejor proyecto y estilo. Ambiente competitivo." },
+    { "time": "18:00", "title": "Grip & Drift", "description": "Tandas de derrapes espectaculares. Humo, ruido y espectáculo asegurado." },
+    { "time": "20:00", "title": "Show de Clausura", "description": "Gran final con exhibiciones, sorpresas y el cierre por todo lo alto." }
+  ],
+  "stats": [
+    { "number": "6+", "label": "Actividades" },
+    { "number": "10h", "label": "Duración" },
+    { "number": "1", "label": "Circuito" },
+    { "number": "∞", "label": "Adrenalina" }
+  ],
+  "sponsors": [
+    { "name": "DIAMOND SQUAD", "subtitle": "ORGANIZA" },
+    { "name": "FK1 CIRCUIT", "subtitle": "SEDE" },
+    { "name": "RPM FEST", "subtitle": "EVENTO" }
+  ]
+}
