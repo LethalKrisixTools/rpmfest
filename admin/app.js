@@ -1,10 +1,16 @@
 // ============================================
 // RPM FEST — Admin Panel
 // ============================================
-// CONFIGURACIÓN: Pega aquí tu URL de Google Apps Script
-const GS_URL = 'https://script.google.com/macros/s/XXXXX/exec';
+// CONFIGURACIÓN GITHUB
+const GITHUB_OWNER = 'LethalKrisixTools';
+const GITHUB_REPO = 'rpmfest';
+const GITHUB_PATH = 'data/data.json';
+const GITHUB_BRANCH = 'main';
+// Token con permiso repo (https://github.com/settings/tokens)
+// Tus compañeros necesitan su propio token cada uno
+const GITHUB_TOKEN = '';
 
-// Contraseña del panel (cámbiala)
+// Contraseña del panel
 const PANEL_PASSWORD = 'admin2026';
 
 // ============================================
@@ -21,6 +27,7 @@ let state = {
 };
 
 let currentTab = 'evento';
+let currentSha = null;
 
 // ========== LOGIN ==========
 
@@ -48,38 +55,34 @@ $('btn-logout').addEventListener('click', () => {
 // ========== LOAD DATA ==========
 
 async function loadData() {
-  setStatus('Conectando...', '');
+  setStatus('Cargando...', '');
   try {
-    const tabs = ['config', 'activities', 'schedule', 'stats', 'sponsors'];
-    const results = await Promise.all(
-      tabs.map(tab =>
-        fetch(`${GS_URL}?tab=${tab}`).then(r => r.json())
-      )
-    );
+    // Try to load from GitHub API
+    const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_PATH}`;
+    const headers = {};
+    if (GITHUB_TOKEN) headers.Authorization = `Bearer ${GITHUB_TOKEN}`;
 
-    state.config = results[0] || {};
-    state.activities = results[1] || [];
-    state.schedule = results[2] || [];
-    state.stats = results[3] || [];
-    state.sponsors = results[4] || [];
+    const res = await fetch(url, { headers });
+    if (!res.ok) throw new Error('GitHub API error');
 
-    // Default sponsors
-    if (!state.sponsors.length) {
-      state.sponsors = [
-        { name: 'DIAMOND SQUAD', subtitle: 'ORGANIZA' },
-        { name: 'FK1 CIRCUIT', subtitle: 'SEDE' },
-        { name: 'RPM FEST', subtitle: 'EVENTO' }
-      ];
-    }
+    const data = await res.json();
+    currentSha = data.sha;
+    const content = atob(data.content);
+    const json = JSON.parse(content);
+
+    state.config = json.config || {};
+    state.activities = json.activities || [];
+    state.schedule = json.schedule || [];
+    state.stats = json.stats || [];
+    state.sponsors = json.sponsors || [];
 
     setStatus('Conectado', 'online');
-    renderTab(currentTab);
-  } catch (err) {
-    console.error(err);
+  } catch {
     setStatus('Sin conexión (usa datos locales)', 'offline');
     loadDefaults();
-    renderTab(currentTab);
   }
+
+  renderTab(currentTab);
 }
 
 function loadDefaults() {
@@ -145,48 +148,75 @@ function notify(msg, type = 'success') {
   el.className = `notification ${type}`;
   el.textContent = msg;
   document.body.appendChild(el);
-  setTimeout(() => el.remove(), 3000);
+  setTimeout(() => el.remove(), 3500);
 }
 
-// ========== SAVE ==========
+// ========== SAVE TO GITHUB ==========
 
 $('btn-save').addEventListener('click', async () => {
   collectData();
-  $('btn-save').textContent = 'Guardando...';
+  $('btn-save').textContent = 'Publicando...';
   $('btn-save').disabled = true;
 
   try {
-      const tabs = ['config', 'activities', 'schedule', 'stats', 'sponsors'];
-      for (const tab of tabs) {
-        await fetch(GS_URL, {
-          method: 'POST',
-          body: JSON.stringify({ tab, data: state[tab] })
-        });
-      }
-    notify('Cambios guardados correctamente ✅');
+    await saveToGitHub();
+    notify('Cambios publicados en GitHub ✅');
   } catch (err) {
-    notify('Error al guardar. Revisa la conexión con Google Sheets.', 'error');
-    console.error(err);
+    notify('Error: ' + err.message, 'error');
   }
 
   $('btn-save').textContent = 'Guardar Cambios';
   $('btn-save').disabled = false;
 });
 
-function collectData() {
-  const tab = currentTab;
-  if (tab === 'evento') collectEvento();
-  else if (tab === 'hero') collectHero();
-  else if (tab === 'actividades') collectActividades();
-  else if (tab === 'horarios') collectHorarios();
-  else if (tab === 'stats') collectStats();
-  else if (tab === 'sponsors') collectSponsors();
+async function saveToGitHub() {
+  // Primero pedir el token si no está configurado
+  let token = GITHUB_TOKEN;
+  if (!token) {
+    token = prompt('Introduce tu GitHub Token (repo scope):');
+    if (!token) throw new Error('Token requerido');
+  }
+
+  // Construir el JSON actualizado
+  const payload = {
+    config: state.config,
+    activities: state.activities,
+    schedule: state.schedule,
+    stats: state.stats,
+    sponsors: state.sponsors
+  };
+
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2))));
+  const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_PATH}`;
+
+  const body = {
+    message: `feat: actualizar datos evento desde panel admin`,
+    content,
+    branch: GITHUB_BRANCH
+  };
+  if (currentSha) body.sha = currentSha;
+
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.message || 'Error al publicar en GitHub');
+  }
+
+  const result = await res.json();
+  currentSha = result.content.sha;
 }
 
 // ========== PREVIEW ==========
 
 $('btn-preview').addEventListener('click', () => {
-  // Open the main site in an iframe
   const overlay = $('preview-overlay');
   overlay.classList.remove('hidden');
   $('preview-iframe').src = '../index.html';
@@ -315,10 +345,6 @@ function renderHero() {
         <div class="form-group">
           <label>Subtítulo</label>
           <input id="f-subtitle" value="${esc(c.subtitle)}">
-        </div>
-        <div class="form-group">
-          <label>Fecha en hero</label>
-          <input id="f-hdate" value="${esc(c.subtitle)}">
         </div>
         <div class="form-group">
           <label>Texto CTA</label>

@@ -1,37 +1,23 @@
 // ============================================
-// RPM Fest — Data Loader from Google Sheets
-// ============================================
-// Pega aquí la URL de tu Google Apps Script
-const GS_DATA_URL = 'https://script.google.com/macros/s/XXXXX/exec';
+// RPM Fest — Data Loader from data.json
 // ============================================
 
 (async function loadData() {
   let data;
 
   try {
-    const [config, activities, schedule, stats] = await Promise.all([
-      fetch(`${GS_DATA_URL}?tab=config`).then(r => r.json()),
-      fetch(`${GS_DATA_URL}?tab=activities`).then(r => r.json()),
-      fetch(`${GS_DATA_URL}?tab=schedule`).then(r => r.json()),
-      fetch(`${GS_DATA_URL}?tab=stats`).then(r => r.json())
-    ]);
-    data = { config, activities, schedule, stats };
+    const res = await fetch('data/data.json');
+    if (!res.ok) throw new Error('Not found');
+    data = await res.json();
   } catch {
-    return; // Fallback: keep static HTML
+    return;
   }
 
-  if (!data.config) return;
+  if (!data || !data.config) return;
 
   const c = data.config;
 
-  // Nav logo
-  const navLogo = document.querySelector('.nav-logo-img');
-  if (navLogo && c.logo) navLogo.src = c.logo;
-
   // Hero
-  const heroImg = document.querySelector('.hero-logo-wrap img');
-  if (heroImg && c.logo) heroImg.src = c.logo;
-
   const badge = document.querySelector('.hero-badge');
   if (badge && c.badge) badge.textContent = c.badge;
 
@@ -49,7 +35,6 @@ const GS_DATA_URL = 'https://script.google.com/macros/s/XXXXX/exec';
   const heroSub = document.querySelector('.hero-sub');
   if (heroSub && c.subtitle) heroSub.textContent = c.subtitle;
 
-  // CTA buttons
   const ctaPrimary = document.querySelector('.btn-primary');
   if (ctaPrimary && c.ctaText) {
     ctaPrimary.textContent = c.ctaText;
@@ -59,12 +44,7 @@ const GS_DATA_URL = 'https://script.google.com/macros/s/XXXXX/exec';
   const ctaDisabled = document.querySelector('.btn-disabled');
   if (ctaDisabled && c.ctaStatus) ctaDisabled.textContent = c.ctaStatus;
 
-  // Section header titles
-  const sectionTitle = document.querySelector('#evento .section-title');
-  if (sectionTitle) {
-    sectionTitle.innerHTML = 'Un festival del <span class="gold">motor</span> como ningún otro';
-  }
-
+  // Evento section
   const sectionDesc = document.querySelector('#evento .section-desc');
   if (sectionDesc && c.descShort) sectionDesc.textContent = c.descShort;
 
@@ -164,7 +144,6 @@ const GS_DATA_URL = 'https://script.google.com/macros/s/XXXXX/exec';
     footerDesc.textContent = 'Un festival del motor como ningún otro. Organizado por ' + c.organizer + '.';
   }
 
-  // Footer year and organizer
   const footerBottom = document.querySelector('.footer-bottom p');
   if (footerBottom && c.organizer) {
     const year = new Date().getFullYear();
