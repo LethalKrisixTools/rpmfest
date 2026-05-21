@@ -112,15 +112,25 @@ img {
   background: var(--bg-darkest);
 }
 
-.hero-bg {
+.hero-video {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.hero-overlay {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 80% 60% at 50% 80%, var(--red-dark) 0%, transparent 65%),
-    radial-gradient(ellipse 60% 40% at 20% 0%, rgba(148, 40, 37, 0.2) 0%, transparent 50%),
-    radial-gradient(ellipse 50% 40% at 80% 100%, rgba(101, 27, 33, 0.25) 0%, transparent 50%),
-    repeating-linear-gradient(0deg, transparent, transparent 80px, rgba(64, 10, 16, 0.06) 80px, rgba(64, 10, 16, 0.06) 81px),
-    repeating-linear-gradient(90deg, transparent, transparent 80px, rgba(64, 10, 16, 0.06) 80px, rgba(64, 10, 16, 0.06) 81px);
+    linear-gradient(180deg, rgba(6, 2, 1, 0.7) 0%, rgba(6, 2, 1, 0.3) 50%, rgba(6, 2, 1, 0.85) 100%),
+    radial-gradient(ellipse 80% 60% at 50% 80%, rgba(64, 10, 16, 0.4) 0%, transparent 65%);
   pointer-events: none;
 }
 
@@ -213,6 +223,31 @@ img {
   border: 2px solid var(--border-subtle);
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+/* ========== POSTER SECTION ========== */
+
+.section-poster {
+  background: var(--bg-dark);
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 80px 0;
+}
+
+.poster-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.poster-img {
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  max-height: 80vh;
+  object-fit: contain;
+  border: 2px solid var(--border-subtle);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
 /* ========== SECTIONS ========== */
