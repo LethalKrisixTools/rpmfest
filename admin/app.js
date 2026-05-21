@@ -15,6 +15,14 @@ const PANEL_PASSWORD = 'admin2026';
 
 // ============================================
 
+function getToken() {
+  return localStorage.getItem('rpmfest_github_token') || '';
+}
+
+function setToken(val) {
+  localStorage.setItem('rpmfest_github_token', val);
+}
+
 const $ = id => document.getElementById(id);
 const $$ = (sel, ctx) => (ctx || document).querySelectorAll(sel);
 
@@ -56,11 +64,13 @@ $('btn-logout').addEventListener('click', () => {
 
 async function loadData() {
   setStatus('Cargando...', '');
+  const token = getToken();
+  if (token) $('token-input').value = token;
+
   try {
-    // Try to load from GitHub API
     const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_PATH}`;
     const headers = {};
-    if (GITHUB_TOKEN) headers.Authorization = `Bearer ${GITHUB_TOKEN}`;
+    if (token) headers.Authorization = `Bearer ${token}`;
 
     const res = await fetch(url, { headers });
     if (!res.ok) throw new Error('GitHub API error');
@@ -84,6 +94,19 @@ async function loadData() {
 
   renderTab(currentTab);
 }
+
+$('btn-save-token').addEventListener('click', () => {
+  const token = $('token-input').value.trim();
+  if (!token) {
+    notify('Introduce un token válido', 'error');
+    return;
+  }
+  setToken(token);
+  setStatus('Token guardado', 'online');
+  notify('Token guardado en localStorage ✅');
+  // Reload data with the token
+  loadData();
+});
 
 function loadDefaults() {
   state.config = {
@@ -170,12 +193,8 @@ $('btn-save').addEventListener('click', async () => {
 });
 
 async function saveToGitHub() {
-  // Primero pedir el token si no está configurado
-  let token = GITHUB_TOKEN;
-  if (!token) {
-    token = prompt('Introduce tu GitHub Token (repo scope):');
-    if (!token) throw new Error('Token requerido');
-  }
+  let token = getToken();
+  if (!token) throw new Error('No hay token. Pon tu GitHub Token en el campo de arriba y dale a Guardar.');
 
   // Construir el JSON actualizado
   const payload = {
