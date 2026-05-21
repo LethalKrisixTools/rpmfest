@@ -26,6 +26,5 @@
 - No frameworks — lightweight landing page
 
 ## Commands
-- View: Open \index.html\ in browser
-<<<<<<< HEAD
-- Deploy: Copy folder to static hosting
+- View: Open \`index.html\` in browser
+- Deploy: \`vercel --prod\`
