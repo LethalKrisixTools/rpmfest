@@ -20,11 +20,17 @@
 5. 🔥 Grip & Drift - Drifting & grip sessions
 6. 🎁 Shows & Sorpresas - Shows, surprises, giveaways
 
+## Design
+- **Style:** Track Performance + Nocturno
+- **Palette:** Negro `#0A0A0A` · Rojo RPM `#E30613` · Naranja `#FF6B00` · Cyan `#00F0FF`
+- **Fonts:** Bebas Neue (headers) · Inter (body)
+- **Inspired by:** FuelFest, GRIDLIFE, Club GT
+
 ## Tech Stack
 - Vanilla HTML5 + CSS3
-- Google Fonts: Oswald (headings), Inter (body)
+- Google Fonts: Bebas Neue + Inter
 - No frameworks — lightweight landing page
 
 ## Commands
-- View: Open \`index.html\` in browser
-- Deploy: \`vercel --prod\`
+- View: Open `index.html` in browser
+- Deploy: `vercel --prod`

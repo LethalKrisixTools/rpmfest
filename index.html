@@ -3,147 +3,309 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RPM Fest - Circuito FK1 | 16 de Mayo 2026</title>
+  <title>RPM Fest — Circuito FK1 | 16 de Mayo 2026</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
+  <div class="cursor-glow"></div>
+
   <nav class="navbar">
     <div class="nav-container">
-      <div class="nav-logo">
-        <span class="logo-icon">⚡</span>
-        <span class="logo-text">RPM FEST</span>
-      </div>
+      <a href="#" class="nav-logo">
+        <span class="logo-rpm">RPM</span>
+        <span class="logo-fest">FEST</span>
+      </a>
       <ul class="nav-links">
-        <li><a href="#info">Info</a></li>
-        <li><a href="#activities">Actividades</a></li>
-        <li><a href="#location">Ubicación</a></li>
+        <li><a href="#experiencias">Experiencias</a></li>
+        <li><a href="#horarios">Horarios</a></li>
+        <li><a href="#ubicacion">Ubicación</a></li>
       </ul>
     </div>
   </nav>
 
   <section class="hero">
-    <div class="hero-overlay"></div>
+    <div class="hero-bg">
+      <div class="hero-pattern"></div>
+      <div class="hero-gradient"></div>
+    </div>
     <div class="hero-content">
-      <div class="hero-badge">DIAMOND SQUAD EVENTS</div>
-      <h1 class="hero-title">RPM <span class="highlight">FEST</span></h1>
-      <p class="hero-subtitle">Circuito Internacional FK1</p>
-      <div class="hero-meta">
-        <span class="hero-date">📅 16 de Mayo 2026</span>
-        <span class="hero-time">⏰ 10:00</span>
+      <div class="hero-badge">DIAMOND SQUAD EVENTS · 2026</div>
+      <h1 class="hero-title">
+        <span class="hero-title-line">RPM</span>
+        <span class="hero-title-line accent">FEST</span>
+      </h1>
+      <div class="hero-info">
+        <div class="hero-info-item">
+          <span class="hero-info-icon">📅</span>
+          <span>16 MAYO 2026</span>
+        </div>
+        <div class="hero-info-divider"></div>
+        <div class="hero-info-item">
+          <span class="hero-info-icon">⏰</span>
+          <span>10:00</span>
+        </div>
+        <div class="hero-info-divider"></div>
+        <div class="hero-info-item">
+          <span class="hero-info-icon">📍</span>
+          <span>Circuito FK1</span>
+        </div>
       </div>
-      <p class="hero-tagline">Motor · Música · Adrenalina</p>
-      <div class="hero-status">🚩 EVENTO FINALIZADO</div>
+      <div class="hero-countdown" id="countdown">
+        <div class="countdown-item">
+          <span class="countdown-num" id="days">00</span>
+          <span class="countdown-label">Días</span>
+        </div>
+        <div class="countdown-sep">:</div>
+        <div class="countdown-item">
+          <span class="countdown-num" id="hours">00</span>
+          <span class="countdown-label">Horas</span>
+        </div>
+        <div class="countdown-sep">:</div>
+        <div class="countdown-item">
+          <span class="countdown-num" id="minutes">00</span>
+          <span class="countdown-label">Min</span>
+        </div>
+        <div class="countdown-sep">:</div>
+        <div class="countdown-item">
+          <span class="countdown-num" id="seconds">00</span>
+          <span class="countdown-label">Seg</span>
+        </div>
+      </div>
+      <div class="hero-ctas">
+        <a href="#experiencias" class="btn btn-primary">EXPLORAR EVENTO</a>
+        <span class="btn btn-secondary disabled">FINALIZADO</span>
+      </div>
+    </div>
+    <div class="hero-scroll">
+      <span>SCROLL</span>
+      <div class="scroll-line"></div>
     </div>
   </section>
 
-  <section id="info" class="section section-dark">
-    <div class="container">
-      <h2 class="section-title">Sobre el <span class="highlight">Evento</span></h2>
-      <div class="info-grid">
-        <div class="info-card">
-          <p>Si te gusta el motor, la música y la adrenalina… este evento es para ti. <strong>RPM Fest</strong> llega para convertir el Circuito FK1 en una auténtica fiesta del automóvil y el espectáculo. Un día completo donde el ruido de los motores, la música en directo y el ambiente brutal serán los protagonistas.</p>
-          <p><strong>RPM Fest no es solo una concentración… es un festival del motor.</strong></p>
-        </div>
-        <div class="info-card info-card-compact">
-          <div class="info-item">
-            <span class="info-icon">📅</span>
-            <div><strong>Fecha</strong><br>16 de Mayo 2026</div>
-          </div>
-          <div class="info-item">
-            <span class="info-icon">⏰</span>
-            <div><strong>Horario</strong><br>10:00 — Apertura</div>
-          </div>
-          <div class="info-item">
-            <span class="info-icon">📍</span>
-            <div><strong>Ubicación</strong><br>Circuito Internacional FK1<br>Villaverde de Medina, Valladolid</div>
-          </div>
-          <div class="info-item">
-            <span class="info-icon">👕</span>
-            <div><strong>Código de vestimenta</strong><br>Casual</div>
-          </div>
-        </div>
-      </div>
+  <section class="marquee">
+    <div class="marquee-track">
+      <span>🔥 DRIFT</span>
+      <span>⚡ LANZADAS</span>
+      <span>🎤 MÚSICA EN DIRECTO</span>
+      <span>🚗 EXPO</span>
+      <span>🏆 BATALLA DE CLUBS</span>
+      <span>🔥 DRIFT</span>
+      <span>⚡ LANZADAS</span>
+      <span>🎤 MÚSICA EN DIRECTO</span>
+      <span>🚗 EXPO</span>
+      <span>🏆 BATALLA DE CLUBS</span>
     </div>
   </section>
 
-  <section id="activities" class="section section-black">
+  <section id="experiencias" class="section">
     <div class="container">
-      <h2 class="section-title">Actividades del <span class="highlight">Festival</span></h2>
-      <div class="activities-grid">
-        <div class="activity-card">
-          <div class="activity-icon">🎤</div>
+      <div class="section-header">
+        <span class="section-tag">ACTIVIDADES</span>
+        <h2 class="section-title">Experiencias del <span class="accent">Festival</span></h2>
+        <p class="section-desc">Un día completo donde el ruido de los motores, la música en directo y el ambiente brutal son los protagonistas.</p>
+      </div>
+      <div class="experiencias-grid">
+        <div class="exp-card">
+          <div class="exp-card-bg" style="background-image: radial-gradient(circle at 30% 40%, rgba(227,6,19,0.3), transparent 70%)"></div>
+          <div class="exp-icon">🎤</div>
           <h3>Escenario en Directo</h3>
           <p>Artistas en vivo durante toda la jornada. Música y actuaciones para que el festival no pare ni un momento.</p>
+          <div class="exp-tag">MÚSICA</div>
         </div>
-        <div class="activity-card">
-          <div class="activity-icon">🚗</div>
+        <div class="exp-card">
+          <div class="exp-card-bg" style="background-image: radial-gradient(circle at 30% 40%, rgba(255,107,0,0.3), transparent 70%)"></div>
+          <div class="exp-icon">🚗</div>
           <h3>Zona Expo</h3>
           <p>Coches preparados, deportivos, clásicos y proyectos exclusivos. Ideal para inspirarte, hacer fotos y conocer a otros apasionados.</p>
+          <div class="exp-tag">EXPOSICIÓN</div>
         </div>
-        <div class="activity-card">
-          <div class="activity-icon">🏆</div>
+        <div class="exp-card">
+          <div class="exp-card-bg" style="background-image: radial-gradient(circle at 30% 40%, rgba(0,240,255,0.25), transparent 70%)"></div>
+          <div class="exp-icon">🏆</div>
           <h3>Batalla de Clubs</h3>
           <p>Los clubs compiten por demostrar quién tiene el mejor proyecto, más estilo y presencia. Pasión por el motor en estado puro.</p>
+          <div class="exp-tag">COMPETICIÓN</div>
         </div>
-        <div class="activity-card">
-          <div class="activity-icon">🚀</div>
+        <div class="exp-card">
+          <div class="exp-card-bg" style="background-image: radial-gradient(circle at 30% 40%, rgba(227,6,19,0.3), transparent 70%)"></div>
+          <div class="exp-icon">🚀</div>
           <h3>Lanzadas</h3>
           <p>Potencia pura en acción. Aceleraciones que ponen los pelos de punta y máquinas sacando todo su potencial en pista.</p>
+          <div class="exp-tag">VELOCIDAD</div>
         </div>
-        <div class="activity-card">
-          <div class="activity-icon">🔥</div>
+        <div class="exp-card">
+          <div class="exp-card-bg" style="background-image: radial-gradient(circle at 30% 40%, rgba(255,107,0,0.3), transparent 70%)"></div>
+          <div class="exp-icon">🔥</div>
           <h3>Grip &amp; Drift</h3>
           <p>Tandas de agarre y derrapes espectaculares. Humo, ruido, técnica y espectáculo asegurado para los fans del drifting.</p>
+          <div class="exp-tag">DRIFT</div>
         </div>
-        <div class="activity-card">
-          <div class="activity-icon">🎁</div>
+        <div class="exp-card">
+          <div class="exp-card-bg" style="background-image: radial-gradient(circle at 30% 40%, rgba(0,240,255,0.25), transparent 70%)"></div>
+          <div class="exp-icon">🎁</div>
           <h3>Shows &amp; Sorpresas</h3>
           <p>Animación constante, exhibiciones y regalos para el público. Aquí siempre están pasando cosas.</p>
+          <div class="exp-tag">SHOW</div>
         </div>
       </div>
     </div>
   </section>
 
-  <section id="location" class="section section-dark">
+  <section class="section section-dark quote-section">
     <div class="container">
-      <h2 class="section-title">Ubicación</h2>
-      <div class="location-card">
+      <blockquote class="quote">
+        <p>"RPM Fest no es solo una concentración… es un <span class="accent">festival del motor</span>."</p>
+      </blockquote>
+    </div>
+  </section>
+
+  <section id="horarios" class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">CRONOGRAMA</span>
+        <h2 class="section-title">Horarios del <span class="accent">Evento</span></h2>
+      </div>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-time">10:00</div>
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <h3>Apertura de Puertas</h3>
+            <p>Comienza la fiesta. Acceso al recinto, acreditaciones y primer contacto con la zona expo.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">11:00</div>
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <h3>Inicio Zona Expo</h3>
+            <p>Apertura oficial de la exposición de coches. Primeros pases por la pista.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">12:00</div>
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <h3>Lanzadas — Sesión 1</h3>
+            <p>Primeras aceleraciones en pista. Potencia pura en acción.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">14:00</div>
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <h3>Música en Directo</h3>
+            <p>Actuaciones musicales. El escenario principal cobra vida.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">16:00</div>
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <h3>Batalla de Clubs</h3>
+            <p>Los clubs compiten por el mejor proyecto y estilo. Ambiente competitivo.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">18:00</div>
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <h3>Grip &amp; Drift</h3>
+            <p>Tandas de derrapes espectaculares. Humo, ruido y espectáculo asegurado.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">20:00</div>
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <h3>Show de Clausura</h3>
+            <p>Gran final con exhibiciones, sorpresas y el cierre por todo lo alto.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-stats">
+    <div class="container stats-grid">
+      <div class="stat-item">
+        <span class="stat-num">6+</span>
+        <span class="stat-label">Actividades</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-num">10h</span>
+        <span class="stat-label">De duración</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-num">1</span>
+        <span class="stat-label">Circuito</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-num">∞</span>
+        <span class="stat-label">Adrenalina</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="ubicacion" class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">UBICACIÓN</span>
+        <h2 class="section-title">Circuito <span class="accent">FK1</span></h2>
+      </div>
+      <div class="location-wrapper">
         <div class="location-info">
-          <h3>Circuito Internacional FK1</h3>
-          <p>Ctra. Comarcal, 602, 47465<br>Villaverde de Medina, Valladolid, España</p>
-          <a href="https://www.google.com/maps/search/?api=1&query=41.30283,-5.014728" target="_blank" class="btn-map">📍 Ver en Google Maps</a>
+          <div class="location-address">
+            <span class="location-icon">📍</span>
+            <div>
+              <h3>Circuito Internacional FK1</h3>
+              <p>Ctra. Comarcal, 602, 47465<br>Villaverde de Medina, Valladolid</p>
+            </div>
+          </div>
+          <div class="location-details">
+            <div class="location-detail-item">
+              <span class="detail-label">Código vestimenta</span>
+              <span class="detail-value">Casual</span>
+            </div>
+            <div class="location-detail-item">
+              <span class="detail-label">Organiza</span>
+              <span class="detail-value">Diamond Squad Events</span>
+            </div>
+          </div>
+          <a href="https://www.google.com/maps/search/?api=1&query=41.30283,-5.014728" target="_blank" class="btn btn-primary btn-map">
+            <span>🗺️</span> VER EN GOOGLE MAPS
+          </a>
         </div>
         <div class="location-map">
           <iframe
             src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d24260!2d-5.014728!3d41.30283!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDHCsDE4JzEwLjIiTiA1wrAwMCc1My4wIlc!5e0!3m2!1ses!2ses!4v1"
-            width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy">
+            allowfullscreen="" loading="lazy">
           </iframe>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="section section-highlight cta-section">
-    <div class="container cta-container">
-      <h2 class="cta-title">¿Te lo vas a perder?</h2>
-      <p class="cta-text">El evento ya pasó, pero el RPM Fest volverá. ¡Prepárate para la próxima edición!</p>
-      <div class="cta-organizer">Organizado por <strong>Diamond Squad Events</strong></div>
-    </div>
-  </section>
-
   <footer class="footer">
-    <div class="container footer-container">
-      <div class="footer-brand">
-        <span class="footer-logo">⚡ RPM FEST</span>
-        <p>Un festival del motor como ningún otro.</p>
-      </div>
-      <div class="footer-links">
-        <a href="https://web.fourvenues.com/es/legal/aviso-legal" target="_blank">Aviso Legal</a>
-        <a href="https://web.fourvenues.com/es/legal/politica-de-cookies" target="_blank">Política de Cookies</a>
-        <a href="https://web.fourvenues.com/es/legal/politica-de-privacidad" target="_blank">Política de Privacidad</a>
+    <div class="footer-pattern"></div>
+    <div class="container">
+      <div class="footer-main">
+        <div class="footer-brand">
+          <span class="footer-logo">RPM<span class="accent">FEST</span></span>
+          <p class="footer-desc">Un festival del motor como ningún otro. Organizado por Diamond Squad Events.</p>
+        </div>
+        <div class="footer-links">
+          <h4>Legal</h4>
+          <a href="https://web.fourvenues.com/es/legal/aviso-legal" target="_blank">Aviso Legal</a>
+          <a href="https://web.fourvenues.com/es/legal/politica-de-cookies" target="_blank">Política de Cookies</a>
+          <a href="https://web.fourvenues.com/es/legal/politica-de-privacidad" target="_blank">Política de Privacidad</a>
+        </div>
       </div>
     </div>
     <div class="footer-bottom">
