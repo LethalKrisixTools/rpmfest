@@ -321,7 +321,13 @@ img {
 }
 
 .first-section {
-  padding-top: calc(var(--section-gap) + 64px);
+  padding-top: 180px;
+}
+
+@media (max-width: 768px) {
+  .first-section {
+    padding-top: 140px;
+  }
 }
 
 .section-header {
