@@ -27,4 +27,5 @@
 
 ## Commands
 - View: Open \index.html\ in browser
+<<<<<<< HEAD
 - Deploy: Copy folder to static hosting
