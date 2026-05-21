@@ -1,27 +1,8 @@
 // ============================================
 // RPM FEST — Admin Panel
 // ============================================
-// CONFIGURACIÓN GITHUB
-const GITHUB_OWNER = 'LethalKrisixTools';
-const GITHUB_REPO = 'rpmfest';
-const GITHUB_PATH = 'data/data.json';
-const GITHUB_BRANCH = 'main';
-// Token con permiso repo (https://github.com/settings/tokens)
-// Tus compañeros necesitan su propio token cada uno
-const GITHUB_TOKEN = '';
 
-// Contraseña del panel
 const PANEL_PASSWORD = 'admin2026';
-
-// ============================================
-
-function getToken() {
-  return localStorage.getItem('rpmfest_github_token') || '';
-}
-
-function setToken(val) {
-  localStorage.setItem('rpmfest_github_token', val);
-}
 
 const $ = id => document.getElementById(id);
 const $$ = (sel, ctx) => (ctx || document).querySelectorAll(sel);
@@ -35,7 +16,6 @@ let state = {
 };
 
 let currentTab = 'evento';
-let currentSha = null;
 
 // ========== LOGIN ==========
 
@@ -64,21 +44,14 @@ $('btn-logout').addEventListener('click', () => {
 
 async function loadData() {
   setStatus('Cargando...', '');
-  const token = getToken();
-  if (token) $('token-input').value = token;
+  const hook = localStorage.getItem('rpmfest_deploy_hook') || '';
+  if (hook) $('deploy-hook-input').value = hook;
 
   try {
-    const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_PATH}`;
-    const headers = {};
-    if (token) headers.Authorization = `Bearer ${token}`;
+    const res = await fetch('/data/data.json?_=' + Date.now());
+    if (!res.ok) throw new Error('Error al cargar datos');
 
-    const res = await fetch(url, { headers });
-    if (!res.ok) throw new Error('GitHub API error');
-
-    const data = await res.json();
-    currentSha = data.sha;
-    const content = atob(data.content);
-    const json = JSON.parse(content);
+    const json = await res.json();
 
     state.config = json.config || {};
     state.activities = json.activities || [];
@@ -95,37 +68,14 @@ async function loadData() {
   renderTab(currentTab);
 }
 
-// Load deploy hook from localStorage
-function getDeployHook() {
-  return localStorage.getItem('rpmfest_deploy_hook') || '';
-}
-function setDeployHook(val) {
-  localStorage.setItem('rpmfest_deploy_hook', val);
-}
-
-$('btn-save-token').addEventListener('click', () => {
-  const token = $('token-input').value.trim();
-  if (!token) {
-    notify('Introduce un token válido', 'error');
-    return;
-  }
-  setToken(token);
-  setStatus('Token guardado', 'online');
-  notify('Token guardado en localStorage ✅');
-  loadData();
-});
-
 $('btn-save-hook').addEventListener('click', () => {
   const hook = $('deploy-hook-input').value.trim();
-  setDeployHook(hook);
+  localStorage.setItem('rpmfest_deploy_hook', hook);
   notify(hook ? 'Deploy hook guardado ✅' : 'Deploy hook eliminado');
 });
 
-// Load stored values on init
 function loadStoredValues() {
-  const token = getToken();
-  if (token) $('token-input').value = token;
-  const hook = getDeployHook();
+  const hook = localStorage.getItem('rpmfest_deploy_hook') || '';
   if (hook) $('deploy-hook-input').value = hook;
 }
 
@@ -215,7 +165,7 @@ $('btn-save').addEventListener('click', async () => {
 
   try {
     collectData();
-    await saveToGitHub();
+    await saveToVercel();
     notify('Cambios publicados en GitHub ✅');
 
     // Trigger Vercel deploy hook if configured
@@ -236,10 +186,7 @@ $('btn-save').addEventListener('click', async () => {
   $('btn-save').disabled = false;
 });
 
-async function saveToGitHub() {
-  let token = getToken();
-  if (!token) throw new Error('No hay token. Pon tu GitHub Token en el campo de arriba y dale a Guardar.');
-
+async function saveToVercel() {
   const payload = {
     config: state.config,
     activities: state.activities,
@@ -248,58 +195,18 @@ async function saveToGitHub() {
     sponsors: state.sponsors
   };
 
-  const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_PATH}`;
-
-  // Si no tenemos sha, intentamos obtenerlo
-  if (!currentSha) {
-    try {
-      const getRes = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (getRes.ok) {
-        const existing = await getRes.json();
-        currentSha = existing.sha;
-      }
-    } catch {}
-  }
-
-  // Base64 encoding compatible con Unicode/emojis
-  const jsonStr = JSON.stringify(payload, null, 2);
-  const encoder = new TextEncoder();
-  const bytes = encoder.encode(jsonStr);
-  let binary = '';
-  for (const byte of bytes) {
-    binary += String.fromCharCode(byte);
-  }
-  const content = btoa(binary);
-
-  const body = {
-    message: `feat: actualizar datos evento desde panel admin`,
-    content,
-    branch: GITHUB_BRANCH
-  };
-  if (currentSha) body.sha = currentSha;
-
-  const res = await fetch(url, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(body)
+  const res = await fetch('/api/save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
   });
 
   if (!res.ok) {
-    let msg = 'Error HTTP ' + res.status;
-    try {
-      const err = await res.json();
-      msg = err.message || msg;
-    } catch {}
-    throw new Error(msg);
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Error del servidor: ${res.status}`);
   }
 
-  const result = await res.json();
-  currentSha = result.content.sha;
+  return res.json();
 }
 
 // ========== PREVIEW ==========
