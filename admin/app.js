@@ -7,6 +7,13 @@ const PANEL_PASSWORD = 'admin2026';
 const $ = id => document.getElementById(id);
 const $$ = (sel, ctx) => (ctx || document).querySelectorAll(sel);
 
+function getToken() {
+  return localStorage.getItem('rpmfest_github_token') || '';
+}
+function setToken(val) {
+  localStorage.setItem('rpmfest_github_token', val);
+}
+
 let state = {
   config: {},
   activities: [],
@@ -16,6 +23,7 @@ let state = {
 };
 
 let currentTab = 'evento';
+let currentSha = null;
 
 // ========== LOGIN ==========
 
@@ -44,20 +52,41 @@ $('btn-logout').addEventListener('click', () => {
 
 async function loadData() {
   setStatus('Cargando...', '');
+  const token = getToken();
+  if (token) $('token-input').value = token;
   const hook = localStorage.getItem('rpmfest_deploy_hook') || '';
   if (hook) $('deploy-hook-input').value = hook;
 
   try {
-    const res = await fetch('/data/data.json?_=' + Date.now());
-    if (!res.ok) throw new Error('Error al cargar datos');
+    const url = 'https://api.github.com/repos/LethalKrisixTools/rpmfest/contents/data/data.json';
+    const headers = {};
+    if (token) headers.Authorization = 'Bearer ' + token;
 
-    const json = await res.json();
-
-    state.config = json.config || {};
-    state.activities = json.activities || [];
-    state.schedule = json.schedule || [];
-    state.stats = json.stats || [];
-    state.sponsors = json.sponsors || [];
+    const res = await fetch(url, { headers });
+    if (res.ok) {
+      const data = await res.json();
+      currentSha = data.sha;
+      const content = atob(data.content);
+      const json = JSON.parse(content);
+      state.config = json.config || {};
+      state.activities = json.activities || [];
+      state.schedule = json.schedule || [];
+      state.stats = json.stats || [];
+      state.sponsors = json.sponsors || [];
+    } else {
+      // Fallback to deployed data.json
+      const fallback = await fetch('/data/data.json?_=' + Date.now());
+      if (fallback.ok) {
+        const json = await fallback.json();
+        state.config = json.config || {};
+        state.activities = json.activities || [];
+        state.schedule = json.schedule || [];
+        state.stats = json.stats || [];
+        state.sponsors = json.sponsors || [];
+      } else {
+        throw new Error();
+      }
+    }
 
     setStatus('Conectado', 'online');
   } catch {
@@ -68,6 +97,17 @@ async function loadData() {
   renderTab(currentTab);
 }
 
+$('btn-save-token').addEventListener('click', () => {
+  const token = $('token-input').value.trim();
+  if (!token) {
+    notify('Introduce un token válido', 'error');
+    return;
+  }
+  setToken(token);
+  notify('Token guardado en localStorage ✅');
+  loadData();
+});
+
 $('btn-save-hook').addEventListener('click', () => {
   const hook = $('deploy-hook-input').value.trim();
   localStorage.setItem('rpmfest_deploy_hook', hook);
@@ -75,6 +115,8 @@ $('btn-save-hook').addEventListener('click', () => {
 });
 
 function loadStoredValues() {
+  const token = getToken();
+  if (token) $('token-input').value = token;
   const hook = localStorage.getItem('rpmfest_deploy_hook') || '';
   if (hook) $('deploy-hook-input').value = hook;
 }
@@ -165,7 +207,7 @@ $('btn-save').addEventListener('click', async () => {
 
   try {
     collectData();
-    await saveToVercel();
+    await saveToGitHub();
     notify('Cambios publicados en GitHub ✅');
 
     // Trigger Vercel deploy hook if configured
@@ -186,7 +228,10 @@ $('btn-save').addEventListener('click', async () => {
   $('btn-save').disabled = false;
 });
 
-async function saveToVercel() {
+async function saveToGitHub() {
+  const token = getToken();
+  if (!token) throw new Error('No hay token. Pega tu GitHub Token en el campo de arriba y dale a OK.');
+
   const payload = {
     config: state.config,
     activities: state.activities,
@@ -195,18 +240,49 @@ async function saveToVercel() {
     sponsors: state.sponsors
   };
 
-  const res = await fetch('/api/save', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
+  const url = 'https://api.github.com/repos/LethalKrisixTools/rpmfest/contents/data/data.json';
+
+  if (!currentSha) {
+    try {
+      const getRes = await fetch(url, {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      if (getRes.ok) {
+        const existing = await getRes.json();
+        currentSha = existing.sha;
+      }
+    } catch {}
+  }
+
+  const jsonStr = JSON.stringify(payload, null, 2);
+  const bytes = new TextEncoder().encode(jsonStr);
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  const content = btoa(binary);
+
+  const body = { message: 'feat: actualizar datos evento desde panel admin', content, branch: 'main' };
+  if (currentSha) body.sha = currentSha;
+
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      Authorization: 'Bearer ' + token,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
   });
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Error del servidor: ${res.status}`);
+    let msg = 'Error HTTP ' + res.status;
+    try {
+      const err = await res.json();
+      msg = err.message || msg;
+    } catch {}
+    throw new Error(msg);
   }
 
-  return res.json();
+  const result = await res.json();
+  currentSha = result.content.sha;
 }
 
 // ========== PREVIEW ==========
