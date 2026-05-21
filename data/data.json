@@ -2,55 +2,55 @@
   "config": {
     "name": "RPM FEST",
     "organizer": "Diamond Squad Events",
-    "date": "Sábado 16 de Mayo · 10:00",
+    "date": "SÃ¡bado 16 de Mayo Â· 10:00",
     "location": "Circuito Internacional FK1",
     "address": "Ctra. Comarcal, 602, 47465\nVillaverde de Medina, Valladolid",
     "status": "finalizado",
     "dressCode": "Casual",
     "badge": "DIAMOND SQUAD EVENTS",
     "title": "RPM FEST",
-    "subtitle": "Sábado 16 de Mayo · 10:00 · Circuito FK1",
+    "subtitle": "SÃ¡bado 16 de Mayo Â· 10:00 Â· Circuito FK1",
     "ctaText": "EXPLORAR EVENTO",
     "ctaLink": "#experiencias",
     "ctaStatus": "FINALIZADO",
-    "descShort": "RPM Fest no es solo una concentración de coches. Es un festival donde el rugido de los motores, la música en directo y el ambiente brutal se fusionan en un día inolvidable en el Circuito FK1.",
-    "quote": "RPM Fest no es solo una concentración… es un festival del motor."
+    "descShort": "RPM Fest no es solo una concentraciÃ³n de coches. Es un festival donde el rugido de los motores, la mÃºsica en directo y el ambiente brutal se fusionan en un dÃ­a inolvidable en el Circuito FK1.",
+    "quote": "RPM Fest no es solo una concentraciÃ³nâ¦ es un festival del motor."
   },
   "activities": [
     {
-      "icon": "🎤",
+      "icon": "ð¤",
       "title": "Escenario en Directo",
-      "description": "Artistas en vivo durante toda la jornada. Música y actuaciones para que el festival no pare ni un momento.",
-      "tag": "MÚSICA"
+      "description": "Artistas en vivo durante toda la jornada. MÃºsica y actuaciones para que el festival no pare ni un momento.",
+      "tag": "MÃSICA"
     },
     {
-      "icon": "🚗",
+      "icon": "ð",
       "title": "Zona Expo",
-      "description": "Coches preparados, deportivos, clásicos y proyectos exclusivos. Ideal para inspirarte, hacer fotos y conocer a otros apasionados.",
-      "tag": "EXPOSICIÓN"
+      "description": "Coches preparados, deportivos, clÃ¡sicos y proyectos exclusivos. Ideal para inspirarte, hacer fotos y conocer a otros apasionados.",
+      "tag": "EXPOSICIÃN"
     },
     {
-      "icon": "🏆",
+      "icon": "ð",
       "title": "Batalla de Clubs",
-      "description": "Los clubs compiten por demostrar quién tiene el mejor proyecto, más estilo y presencia. Pasión por el motor en estado puro.",
-      "tag": "COMPETICIÓN"
+      "description": "Los clubs compiten por demostrar quiÃ©n tiene el mejor proyecto, mÃ¡s estilo y presencia. PasiÃ³n por el motor en estado puro.",
+      "tag": "COMPETICIÃN"
     },
     {
-      "icon": "🚀",
+      "icon": "ð",
       "title": "Lanzadas",
-      "description": "Potencia pura en acción. Aceleraciones que ponen los pelos de punta y máquinas sacando todo su potencial en pista.",
+      "description": "Potencia pura en acciÃ³n. Aceleraciones que ponen los pelos de punta y mÃ¡quinas sacando todo su potencial en pista.",
       "tag": "VELOCIDAD"
     },
     {
-      "icon": "🔥",
+      "icon": "ð¥",
       "title": "Grip & Drift",
-      "description": "Tandas de agarre y derrapes espectaculares. Humo, ruido, técnica y espectáculo asegurado para los fans del drifting.",
+      "description": "Tandas de agarre y derrapes espectaculares. Humo, ruido, tÃ©cnica y espectÃ¡culo asegurado para los fans del drifting.",
       "tag": "DRIFT"
     },
     {
-      "icon": "🎁",
+      "icon": "ð",
       "title": "Shows & Sorpresas",
-      "description": "Animación constante, exhibiciones y regalos para el público. Aquí siempre están pasando cosas.",
+      "description": "AnimaciÃ³n constante, exhibiciones y regalos para el pÃºblico. AquÃ­ siempre estÃ¡n pasando cosas.",
       "tag": "SHOW"
     }
   ],
@@ -63,16 +63,16 @@
     {
       "time": "11:00",
       "title": "Inicio Zona Expo",
-      "description": "Apertura oficial de la exposición de coches. Primeros pases por la pista."
+      "description": "Apertura oficial de la exposiciÃ³n de coches. Primeros pases por la pista."
     },
     {
       "time": "12:00",
-      "title": "Lanzadas — Sesión 1",
-      "description": "Primeras aceleraciones en pista. Potencia pura en acción."
+      "title": "Lanzadas â SesiÃ³n 1",
+      "description": "Primeras aceleraciones en pista. Potencia pura en acciÃ³n."
     },
     {
       "time": "14:00",
-      "title": "Música en Directo",
+      "title": "MÃºsica en Directo",
       "description": "Actuaciones musicales. El escenario principal cobra vida."
     },
     {
@@ -83,7 +83,7 @@
     {
       "time": "18:00",
       "title": "Grip & Drift",
-      "description": "Tandas de derrapes espectaculares. Humo, ruido y espectáculo asegurado."
+      "description": "Tandas de derrapes espectaculares. Humo, ruido y espectÃ¡culo asegurado."
     },
     {
       "time": "20:00",
@@ -98,14 +98,14 @@
     },
     {
       "number": "10h",
-      "label": "Duración"
+      "label": "DuraciÃ³n"
     },
     {
       "number": "1",
       "label": "Circuito"
     },
     {
-      "number": "∞",
+      "number": "â",
       "label": "Adrenalina"
     }
   ],
