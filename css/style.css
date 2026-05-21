@@ -99,6 +99,62 @@ img {
   color: var(--gold);
 }
 
+.nav-toggle {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.nav-toggle span {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: var(--cream);
+  transition: 0.3s;
+}
+
+@media (max-width: 768px) {
+  .nav-toggle {
+    display: flex;
+  }
+
+  .nav-links {
+    display: none;
+    position: absolute;
+    top: 64px;
+    left: 0;
+    width: 100%;
+    flex-direction: column;
+    background: rgba(6, 2, 1, 0.98);
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 16px 24px;
+    gap: 0;
+  }
+
+  .nav-links.open {
+    display: flex;
+  }
+
+  .nav-links li {
+    width: 100%;
+  }
+
+  .nav-links a {
+    display: block;
+    padding: 12px 0;
+    font-size: 12px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .nav-links li:last-child a {
+    border-bottom: none;
+  }
+}
+
 /* ========== HERO ========== */
 
 .hero {
@@ -824,15 +880,6 @@ img {
 }
 
 @media (max-width: 600px) {
-  .nav-links {
-    gap: 12px;
-  }
-
-  .nav-links a {
-    font-size: 10px;
-    letter-spacing: 0.5px;
-  }
-
   .section {
     padding: 56px 0;
   }

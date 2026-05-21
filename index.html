@@ -15,6 +15,9 @@
       <a href="#" class="nav-logo">
         <img src="logo-rpmfest.png" alt="RPM Fest" class="nav-logo-img">
       </a>
+      <button class="nav-toggle" aria-label="Menú">
+        <span></span><span></span><span></span>
+      </button>
       <ul class="nav-links">
         <li><a href="#evento">Evento</a></li>
         <li><a href="#experiencias">Experiencias</a></li>
@@ -293,5 +296,10 @@
   </footer>
 
   <script src="js/data-loader.js"></script>
+  <script>
+    document.querySelector('.nav-toggle')?.addEventListener('click', () => {
+      document.querySelector('.nav-links')?.classList.toggle('open');
+    });
+  </script>
 </body>
 </html>
