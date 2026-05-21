@@ -6,5 +6,16 @@
   "rewrites": [
     { "source": "/panel", "destination": "/panel.html" },
     { "source": "/panel/", "destination": "/panel.html" }
+  ],
+  "headers": [
+    {
+      "source": "/data/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    }
   ]
 }

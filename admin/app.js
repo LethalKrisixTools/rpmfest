@@ -95,6 +95,14 @@ async function loadData() {
   renderTab(currentTab);
 }
 
+// Load deploy hook from localStorage
+function getDeployHook() {
+  return localStorage.getItem('rpmfest_deploy_hook') || '';
+}
+function setDeployHook(val) {
+  localStorage.setItem('rpmfest_deploy_hook', val);
+}
+
 $('btn-save-token').addEventListener('click', () => {
   const token = $('token-input').value.trim();
   if (!token) {
@@ -104,9 +112,22 @@ $('btn-save-token').addEventListener('click', () => {
   setToken(token);
   setStatus('Token guardado', 'online');
   notify('Token guardado en localStorage ✅');
-  // Reload data with the token
   loadData();
 });
+
+$('btn-save-hook').addEventListener('click', () => {
+  const hook = $('deploy-hook-input').value.trim();
+  setDeployHook(hook);
+  notify(hook ? 'Deploy hook guardado ✅' : 'Deploy hook eliminado');
+});
+
+// Load stored values on init
+function loadStoredValues() {
+  const token = getToken();
+  if (token) $('token-input').value = token;
+  const hook = getDeployHook();
+  if (hook) $('deploy-hook-input').value = hook;
+}
 
 function loadDefaults() {
   state.config = {
@@ -184,6 +205,17 @@ $('btn-save').addEventListener('click', async () => {
   try {
     await saveToGitHub();
     notify('Cambios publicados en GitHub ✅');
+
+    // Trigger Vercel deploy hook if configured
+    const hook = getDeployHook();
+    if (hook) {
+      notify('Redeploying Vercel...');
+      try {
+        await fetch(hook, { method: 'POST' });
+      } catch {
+        // ignore
+      }
+    }
   } catch (err) {
     notify('Error: ' + err.message, 'error');
   }
@@ -594,5 +626,6 @@ function esc(str) {
 // ========== INIT ==========
 
 function init() {
+  loadStoredValues();
   loadData();
 }

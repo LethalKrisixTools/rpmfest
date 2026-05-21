@@ -6,7 +6,7 @@
   let data;
 
   try {
-    const res = await fetch('data/data.json');
+    const res = await fetch('data/data.json?_=' + Date.now());
     if (!res.ok) throw new Error('Not found');
     data = await res.json();
   } catch {
