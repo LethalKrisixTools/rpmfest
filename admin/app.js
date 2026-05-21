@@ -228,7 +228,6 @@ async function saveToGitHub() {
   let token = getToken();
   if (!token) throw new Error('No hay token. Pon tu GitHub Token en el campo de arriba y dale a Guardar.');
 
-  // Construir el JSON actualizado
   const payload = {
     config: state.config,
     activities: state.activities,
@@ -237,8 +236,30 @@ async function saveToGitHub() {
     sponsors: state.sponsors
   };
 
-  const content = btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2))));
   const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_PATH}`;
+
+  // Si no tenemos sha, intentamos obtenerlo
+  if (!currentSha) {
+    try {
+      const getRes = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (getRes.ok) {
+        const existing = await getRes.json();
+        currentSha = existing.sha;
+      }
+    } catch {}
+  }
+
+  // Base64 encoding compatible con Unicode/emojis
+  const jsonStr = JSON.stringify(payload, null, 2);
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(jsonStr);
+  let binary = '';
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  const content = btoa(binary);
 
   const body = {
     message: `feat: actualizar datos evento desde panel admin`,
@@ -257,8 +278,12 @@ async function saveToGitHub() {
   });
 
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.message || 'Error al publicar en GitHub');
+    let msg = 'Error HTTP ' + res.status;
+    try {
+      const err = await res.json();
+      msg = err.message || msg;
+    } catch {}
+    throw new Error(msg);
   }
 
   const result = await res.json();
