@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RPM Fest — Panel Admin</title>
   <link rel="stylesheet" href="admin/style.css">
+  <link rel="stylesheet" href="admin/store.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
 </head>
@@ -22,43 +23,14 @@
         <p style="font-size:11px;color:var(--text-secondary);margin-top:32px;line-height:1.5">Los cambios se guardan directo a GitHub.<br>La tienda usa el mismo panel y credenciales.</p>
       </div>
     </div>
-
     <div id="dashboard-screen" class="screen hidden">
-      <nav class="admin-nav">
-        <div class="admin-nav-inner">
-          <span class="admin-nav-logo">RPM<span class="gold">FEST</span> · ADMIN</span>
-          <div class="admin-nav-right"><span class="admin-nav-status" id="conn-status">Conectando...</span><button id="btn-logout" class="btn btn-small">Salir</button></div>
-        </div>
-      </nav>
-
+      <nav class="admin-nav"><div class="admin-nav-inner"><span class="admin-nav-logo">RPM<span class="gold">FEST</span> · ADMIN</span><div class="admin-nav-right"><span class="admin-nav-status" id="conn-status">Conectando...</span><button id="btn-logout" class="btn btn-small">Salir</button></div></div></nav>
       <div class="admin-body">
-        <aside class="admin-sidebar">
-          <button class="sidebar-btn active" data-tab="evento">Evento</button>
-          <button class="sidebar-btn" data-tab="hero">Hero</button>
-          <button class="sidebar-btn" data-tab="actividades">Actividades</button>
-          <button class="sidebar-btn" data-tab="horarios">Horarios</button>
-          <button class="sidebar-btn" data-tab="stats">Estadísticas</button>
-          <button class="sidebar-btn" data-tab="sponsors">Sponsors</button>
-          <button class="sidebar-btn" data-tab="tienda">Tienda</button>
-          <button class="sidebar-btn" data-tab="pedidos">Pedidos</button>
-        </aside>
-
-        <main class="admin-main">
-          <div class="admin-toolbar">
-            <span id="tab-title" class="admin-tab-title">Evento</span>
-            <div class="admin-toolbar-actions">
-              <div class="token-input-wrap"><input type="text" id="deploy-hook-input" placeholder="Vercel Deploy Hook (opcional)" style="width:200px"><button id="btn-save-hook" class="btn btn-token">OK</button></div>
-              <button id="btn-preview" class="btn btn-outline">Previsualizar</button>
-              <button id="btn-store-public" class="btn btn-outline" type="button">Abrir tienda</button>
-              <button id="btn-save" class="btn btn-primary">Guardar</button>
-            </div>
-          </div>
-          <div id="tab-content" class="admin-content"></div>
-        </main>
+        <aside class="admin-sidebar"><button class="sidebar-btn active" data-tab="evento">Evento</button><button class="sidebar-btn" data-tab="hero">Hero</button><button class="sidebar-btn" data-tab="actividades">Actividades</button><button class="sidebar-btn" data-tab="horarios">Horarios</button><button class="sidebar-btn" data-tab="stats">Estadísticas</button><button class="sidebar-btn" data-tab="sponsors">Sponsors</button><button class="sidebar-btn" data-tab="tienda">Tienda</button><button class="sidebar-btn" data-tab="pedidos">Pedidos</button></aside>
+        <main class="admin-main"><div class="admin-toolbar"><span id="tab-title" class="admin-tab-title">Evento</span><div class="admin-toolbar-actions"><div class="token-input-wrap"><input type="text" id="deploy-hook-input" placeholder="Vercel Deploy Hook (opcional)" style="width:200px"><button id="btn-save-hook" class="btn btn-token">OK</button></div><button id="btn-preview" class="btn btn-outline">Previsualizar</button><button id="btn-store-public" class="btn btn-outline" type="button">Abrir tienda</button><button id="btn-save" class="btn btn-primary">Guardar</button></div></div><div id="tab-content" class="admin-content"></div></main>
       </div>
     </div>
   </div>
-
   <div id="preview-overlay" class="preview-overlay hidden"><div class="preview-header"><span>Vista previa — rpmfest.com</span><button id="btn-close-preview" class="btn btn-small">Cerrar</button></div><iframe id="preview-iframe" class="preview-iframe"></iframe></div>
   <script src="admin/app.js"></script>
 </body>
