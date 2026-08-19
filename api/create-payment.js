@@ -77,13 +77,28 @@ module.exports = async function handler(req, res) {
     if (!paymentResponse.ok) return json(res, 502, { error: payment?.detail || 'No se pudo crear el pago.' });
 
     const trackingToken = createTrackingToken(payment.id);
+    const trackingUrl = `${origin}/pedido.html?token=${encodeURIComponent(trackingToken)}`;
+
+    // Replace the initial redirect with the signed tracking URL now that Mollie has issued the payment id.
+    try {
+      await fetch(`https://api.mollie.com/v2/payments/${encodeURIComponent(payment.id)}`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${process.env.MOLLIE_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ redirectUrl: trackingUrl })
+      });
+    } catch (redirectError) {
+      console.error('Tracking redirect update failed:', redirectError);
+    }
 
     return json(res, 200, {
       orderId,
       checkoutUrl: payment?._links?.checkout?.href,
       paymentId: payment.id,
       trackingToken,
-      trackingUrl: `${origin}/pedido.html?token=${encodeURIComponent(trackingToken)}`
+      trackingUrl
     });
   } catch (error) {
     return json(res, 500, { error: error.message || 'Error interno.' });
