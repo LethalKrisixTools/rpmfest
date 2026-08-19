@@ -1,443 +1,59 @@
 const PANEL_PASSWORD = 'admin2026';
 const GH_TOKEN = String.fromCharCode(103,104,112,95,67,119,67,103,103,118,87,78,102,122,101,67,54,80,80,115,69,83,113,100,97,50,118,73,102,88,69,117,48,99,49,87,109,49,105,118);
-
+const REPO = 'LethalKrisixTools/rpmfest';
+const API = 'https://api.github.com/repos/' + REPO;
 const $ = id => document.getElementById(id);
-const $$ = (sel, ctx) => (ctx || document).querySelectorAll(sel);
+let state={config:{},activities:[],schedule:[],stats:[],sponsors:[],products:[],orders:[]};
+let shas={data:null,store:null,orders:null};
+let currentTab='evento';
 
-let state = {
-  config: {},
-  activities: [],
-  schedule: [],
-  stats: [],
-  sponsors: []
-};
+$('login-form').addEventListener('submit',e=>{e.preventDefault();if($('login-pass').value===PANEL_PASSWORD){$('login-screen').classList.add('hidden');$('dashboard-screen').classList.remove('hidden');$('login-error').textContent='';$('login-pass').value='';init()}else $('login-error').textContent='Contraseña incorrecta'});
+$('btn-logout').addEventListener('click',()=>{$('dashboard-screen').classList.add('hidden');$('login-screen').classList.remove('hidden');$('login-pass').value='';$('login-pass').focus()});
+$('btn-save-hook').addEventListener('click',()=>{const hook=$('deploy-hook-input').value.trim();localStorage.setItem('rpmfest_deploy_hook',hook);notify(hook?'Deploy hook guardado ✅':'Deploy hook eliminado')});
+$('btn-store-public').addEventListener('click',()=>window.open('tienda','_blank'));
+$('btn-preview').addEventListener('click',()=>{$('preview-overlay').classList.remove('hidden');$('preview-iframe').src='index.html'});
+$('btn-close-preview').addEventListener('click',()=>{$('preview-overlay').classList.add('hidden');$('preview-iframe').src='' });
 
-let currentTab = 'evento';
-let currentSha = null;
+document.querySelectorAll('.sidebar-btn').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.sidebar-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');currentTab=btn.dataset.tab;renderTab(currentTab)}));
 
-// ========== LOGIN ==========
+async function init(){setStatus('Cargando...','');const hook=localStorage.getItem('rpmfest_deploy_hook')||'';if(hook)$('deploy-hook-input').value=hook;try{await Promise.all([loadJson('data/data.json','data'),loadJson('data/store.json','store'),loadJson('data/orders.json','orders')]);setStatus('Conectado','online')}catch(e){setStatus('Sin conexión parcial','offline');loadDefaults()}renderTab(currentTab)}
+async function loadJson(file,key){const r=await fetch(API+'/contents/'+file+'?ref=main',{headers:{Authorization:'Bearer '+GH_TOKEN,Accept:'application/vnd.github+json'}});if(!r.ok)throw new Error(file+' '+r.status);const d=await r.json();shas[key]=d.sha;const raw=atob(String(d.content).replace(/\n/g,''));const bytes=Uint8Array.from(raw,c=>c.charCodeAt(0));const json=JSON.parse(new TextDecoder().decode(bytes));if(key==='data'){state.config=json.config||{};state.activities=json.activities||[];state.schedule=json.schedule||[];state.stats=json.stats||[];state.sponsors=json.sponsors||[]}else if(key==='store'){state.products=json.products||[]}else state.orders=json.orders||[]}
+function loadDefaults(){state.config={name:'RPM FEST',organizer:'Diamond Squad Events',date:'Sábado 16 de Mayo · 10:00',location:'Circuito Internacional FK1',address:'Ctra. Comarcal, 602, 47465\nVillaverde de Medina, Valladolid',status:'finalizado',dressCode:'Casual',badge:'DIAMOND SQUAD EVENTS',title:'RPM FEST',subtitle:'Sábado 16 de Mayo · 10:00 · Circuito FK1',ctaText:'EXPLORAR EVENTO',ctaLink:'#experiencias',ctaStatus:'FINALIZADO',descShort:'RPM Fest no es solo una concentración de coches. Es un festival donde el rugido de los motores, la música en directo y el ambiente brutal se fusionan en un día inolvidable en el Circuito FK1.',quote:'RPM Fest no es solo una concentración… es un festival del motor.'};state.activities=[];state.schedule=[];state.stats=[];state.sponsors=[];state.products=[];state.orders=[]}
+function setStatus(text,cls){const el=$('conn-status');el.textContent=text;el.className='admin-nav-status'+(cls?' '+cls:'')}
+function notify(msg,type='success'){const el=document.createElement('div');el.className='notification '+type;el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),3500)}
+function esc(v=''){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function fileExt(file){const t=(file.type||'').split('/')[1]||'jpg';return ['jpeg','jpg','png','webp','gif','svg'].includes(t)?(t==='jpeg'?'jpg':t):'jpg'}
+function readDataUrl(file){return new Promise((resolve,reject)=>{if(file.size>2*1024*1024){reject(new Error('Cada imagen debe pesar 2 MB o menos.'));return}const r=new FileReader();r.onload=()=>resolve(String(r.result));r.onerror=()=>reject(new Error('No se pudo leer la imagen.'));r.readAsDataURL(file)})}
+async function uploadImage(file,path){const dataUrl=await readDataUrl(file);const content=dataUrl.split(',')[1];const r=await fetch(API+'/contents/'+path,{method:'PUT',headers:{Authorization:'Bearer '+GH_TOKEN,Accept:'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify({message:'feat: subir imagen de producto',content,branch:'main'})});if(!r.ok){const x=await r.json().catch(()=>({}));throw new Error(x.message||'No se pudo subir la imagen.')}return path}
+async function saveJson(file,key,payload,message){const body={message,content:btoa(unescape(encodeURIComponent(JSON.stringify(payload,null,2)+'\n'))),branch:'main'};if(shas[key])body.sha=shas[key];const r=await fetch(API+'/contents/'+file,{method:'PUT',headers:{Authorization:'Bearer '+GH_TOKEN,Accept:'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok){const x=await r.json().catch(()=>({}));throw new Error(x.message||'GitHub HTTP '+r.status)}const d=await r.json();shas[key]=d.content?.sha||shas[key]}
+async function saveCurrent(){if(currentTab==='tienda'){collectProducts();await saveStore()}else if(currentTab==='pedidos'){notify('Los pedidos se generan automáticamente con los pagos.');return}else{collectCurrentPage();await saveJson('data/data.json','data',{config:state.config,activities:state.activities,schedule:state.schedule,stats:state.stats,sponsors:state.sponsors},'feat: actualizar contenido web desde panel admin')}const hook=localStorage.getItem('rpmfest_deploy_hook')||'';if(hook){try{await fetch(hook,{method:'POST'})}catch{}}notify('Cambios publicados ✅')}
+$('btn-save').addEventListener('click',async()=>{const b=$('btn-save');b.disabled=true;b.textContent='Publicando...';try{await saveCurrent()}catch(e){notify('Error: '+e.message,'error')}b.disabled=false;b.textContent='Guardar'});
+function collectCurrentPage(){if(currentTab==='evento')collectEvento();if(currentTab==='hero')collectHero();if(currentTab==='actividades')collectActividades();if(currentTab==='horarios')collectHorarios();if(currentTab==='stats')collectStats();if(currentTab==='sponsors')collectSponsors()}
+function renderTab(tab){const titles={evento:'Evento',hero:'Hero',actividades:'Actividades',horarios:'Horarios',stats:'Estadísticas',sponsors:'Sponsors',tienda:'Tienda',pedidos:'Pedidos'};$('tab-title').textContent=titles[tab]||tab;const fns={evento:renderEvento,hero:renderHero,actividades:renderActividades,horarios:renderHorarios,stats:renderStats,sponsors:renderSponsors,tienda:renderTienda,pedidos:renderPedidos};$('tab-content').innerHTML='';(fns[tab]||renderEvento)()}
 
-$('login-form').addEventListener('submit', e => {
-  e.preventDefault();
-  const pass = $('login-pass').value;
-  if (pass === PANEL_PASSWORD) {
-    $('login-screen').classList.add('hidden');
-    $('dashboard-screen').classList.remove('hidden');
-    $('login-error').textContent = '';
-    $('login-pass').value = '';
-    init();
-  } else {
-    $('login-error').textContent = 'Contraseña incorrecta';
-  }
-});
+function renderEvento(){const c=state.config;$('tab-content').innerHTML=`<div class="form-section"><div class="form-section-title">Información General</div><div class="form-grid"><div class="form-group"><label>Nombre</label><input id="f-name" value="${esc(c.name)}"></div><div class="form-group"><label>Organizador</label><input id="f-organizer" value="${esc(c.organizer)}"></div><div class="form-group"><label>Fecha</label><input id="f-date" value="${esc(c.date)}"></div><div class="form-group"><label>Estado</label><input id="f-status" value="${esc(c.status)}"></div><div class="form-group"><label>Localización</label><input id="f-location" value="${esc(c.location)}"></div><div class="form-group"><label>Código vestimenta</label><input id="f-dresscode" value="${esc(c.dressCode)}"></div><div class="form-group full"><label>Dirección</label><textarea id="f-address">${esc(c.address)}</textarea></div></div></div><div class="form-section"><div class="form-section-title">Descripción</div><div class="form-group full"><label>Descripción corta</label><textarea id="f-desc">${esc(c.descShort)}</textarea></div><div class="form-group full"><label>Frase destacada</label><input id="f-quote" value="${esc(c.quote)}"></div></div>`}
+function collectEvento(){[['name','f-name'],['organizer','f-organizer'],['date','f-date'],['status','f-status'],['location','f-location'],['dressCode','f-dresscode'],['address','f-address'],['descShort','f-desc'],['quote','f-quote']].forEach(([k,id])=>state.config[k]=$(id).value)}
+function renderHero(){const c=state.config;$('tab-content').innerHTML=`<div class="form-section"><div class="form-section-title">Hero Banner</div><div class="form-grid"><div class="form-group"><label>Badge</label><input id="f-badge" value="${esc(c.badge)}"></div><div class="form-group"><label>Título</label><input id="f-title" value="${esc(c.title)}"></div><div class="form-group"><label>Subtítulo</label><input id="f-subtitle" value="${esc(c.subtitle)}"></div><div class="form-group"><label>Texto CTA</label><input id="f-cta" value="${esc(c.ctaText)}"></div><div class="form-group"><label>Link CTA</label><input id="f-ctalink" value="${esc(c.ctaLink)}"></div><div class="form-group"><label>Estado CTA</label><input id="f-ctastatus" value="${esc(c.ctaStatus)}"></div></div></div>`}
+function collectHero(){state.config.badge=$('f-badge').value;state.config.title=$('f-title').value;state.config.subtitle=$('f-subtitle').value;state.config.ctaText=$('f-cta').value;state.config.ctaLink=$('f-ctalink').value;state.config.ctaStatus=$('f-ctastatus').value}
+function renderActividades(){let html='<div class="form-section"><div class="form-section-title">Actividades</div><button class="btn btn-outline" onclick="addActivity()" type="button">+ Añadir actividad</button><div class="card-list">';state.activities.forEach((a,i)=>html+=`<div class="card-editor" data-index="${i}"><input class="a-icon" value="${esc(a.icon)}" placeholder="Icono"><input class="a-title" value="${esc(a.title)}" placeholder="Título"><textarea class="a-desc" placeholder="Descripción">${esc(a.description)}</textarea><input class="a-tag" value="${esc(a.tag)}" placeholder="Etiqueta"><button class="btn btn-small" type="button" onclick="removeActivity(${i})">Eliminar</button></div>`);$('tab-content').innerHTML=html+'</div></div>'}
+function collectActividades(){document.querySelectorAll('.card-editor').forEach((el,i)=>{state.activities[i]={icon:el.querySelector('.a-icon').value,title:el.querySelector('.a-title').value,description:el.querySelector('.a-desc').value,tag:el.querySelector('.a-tag').value}})}
+function addActivity(){collectActividades();state.activities.push({icon:'🏁',title:'Nueva actividad',description:'Descripción de la actividad.',tag:'ACTIVIDAD'});renderActividades()}
+function removeActivity(i){state.activities.splice(i,1);renderActividades()}
+function renderHorarios(){let html='<div class="form-section"><div class="form-section-title">Horarios</div><button class="btn btn-outline" onclick="addSchedule()" type="button">+ Añadir horario</button><div class="card-list">';state.schedule.forEach((s,i)=>html+=`<div class="card-editor"><input class="s-time" value="${esc(s.time)}" placeholder="Hora"><input class="s-title" value="${esc(s.title)}" placeholder="Título"><textarea class="s-desc">${esc(s.description)}</textarea><button class="btn btn-small" type="button" onclick="removeSchedule(${i})">Eliminar</button></div>`);$('tab-content').innerHTML=html+'</div></div>'}
+function collectHorarios(){document.querySelectorAll('.card-editor').forEach((el,i)=>{state.schedule[i]={time:el.querySelector('.s-time').value,title:el.querySelector('.s-title').value,description:el.querySelector('.s-desc').value}})}
+function addSchedule(){collectHorarios();state.schedule.push({time:'00:00',title:'Nuevo bloque',description:''});renderHorarios()}
+function removeSchedule(i){state.schedule.splice(i,1);renderHorarios()}
+function renderStats(){let html='<div class="form-section"><div class="form-section-title">Estadísticas</div><div class="card-list">';state.stats.forEach((s,i)=>html+=`<div class="card-editor"><input class="st-number" value="${esc(s.number)}" placeholder="Número"><input class="st-label" value="${esc(s.label)}" placeholder="Etiqueta"></div>`);$('tab-content').innerHTML=html+'</div></div>'}
+function collectStats(){document.querySelectorAll('.card-editor').forEach((el,i)=>state.stats[i]={number:el.querySelector('.st-number').value,label:el.querySelector('.st-label').value})}
+function renderSponsors(){let html='<div class="form-section"><div class="form-section-title">Sponsors</div><div class="card-list">';state.sponsors.forEach((s,i)=>html+=`<div class="card-editor"><input class="sp-name" value="${esc(s.name)}" placeholder="Nombre"><input class="sp-sub" value="${esc(s.subtitle)}" placeholder="Subtítulo"></div>`);$('tab-content').innerHTML=html+'</div></div>'}
+function collectSponsors(){document.querySelectorAll('.card-editor').forEach((el,i)=>state.sponsors[i]={name:el.querySelector('.sp-name').value,subtitle:el.querySelector('.sp-sub').value})}
 
-$('btn-logout').addEventListener('click', () => {
-  $('dashboard-screen').classList.add('hidden');
-  $('login-screen').classList.remove('hidden');
-  $('login-pass').value = '';
-  $('login-pass').focus();
-});
-
-// ========== LOAD DATA ==========
-
-async function loadData() {
-  setStatus('Cargando...', '');
-  const hook = localStorage.getItem('rpmfest_deploy_hook') || '';
-  if (hook) $('deploy-hook-input').value = hook;
-
-  try {
-    const url = 'https://api.github.com/repos/LethalKrisixTools/rpmfest/contents/data/data.json';
-    const res = await fetch(url, {
-      headers: { Authorization: 'Bearer ' + GH_TOKEN }
-    });
-
-    if (!res.ok) throw new Error('GitHub API error: ' + res.status);
-
-    const d = await res.json();
-    currentSha = d.sha;
-    const binary = atob(d.content);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    const json = JSON.parse(new TextDecoder().decode(bytes));
-
-    state.config = json.config || {};
-    state.activities = json.activities || [];
-    state.schedule = json.schedule || [];
-    state.stats = json.stats || [];
-    state.sponsors = json.sponsors || [];
-
-    setStatus('Conectado', 'online');
-  } catch {
-    setStatus('Sin conexión (usa datos locales)', 'offline');
-    loadDefaults();
-  }
-
-  renderTab(currentTab);
-}
-
-$('btn-save-hook').addEventListener('click', () => {
-  const hook = $('deploy-hook-input').value.trim();
-  localStorage.setItem('rpmfest_deploy_hook', hook);
-  notify(hook ? 'Deploy hook guardado ✅' : 'Deploy hook eliminado');
-});
-
-function loadStoredValues() {
-  const hook = localStorage.getItem('rpmfest_deploy_hook') || '';
-  if (hook) $('deploy-hook-input').value = hook;
-}
-
-// ========== DEFAULTS ==========
-
-function loadDefaults() {
-  state.config = {
-    name: 'RPM FEST',
-    organizer: 'Diamond Squad Events',
-    date: 'Sábado 16 de Mayo · 10:00',
-    location: 'Circuito Internacional FK1',
-    address: 'Ctra. Comarcal, 602, 47465\nVillaverde de Medina, Valladolid',
-    status: 'finalizado',
-    dressCode: 'Casual',
-    badge: 'DIAMOND SQUAD EVENTS',
-    title: 'RPM FEST',
-    subtitle: 'Sábado 16 de Mayo · 10:00 · Circuito FK1',
-    ctaText: 'EXPLORAR EVENTO',
-    ctaLink: '#experiencias',
-    ctaStatus: 'FINALIZADO',
-    descShort: 'RPM Fest no es solo una concentración de coches. Es un festival donde el rugido de los motores, la música en directo y el ambiente brutal se fusionan en un día inolvidable en el Circuito FK1.',
-    quote: 'RPM Fest no es solo una concentración… es un festival del motor.'
-  };
-  state.activities = [
-    { icon: '🎤', title: 'Escenario en Directo', description: 'Artistas en vivo durante toda la jornada. Música y actuaciones para que el festival no pare ni un momento.', tag: 'MÚSICA' },
-    { icon: '🚗', title: 'Zona Expo', description: 'Coches preparados, deportivos, clásicos y proyectos exclusivos. Ideal para inspirarte, hacer fotos y conocer a otros apasionados.', tag: 'EXPOSICIÓN' },
-    { icon: '🏆', title: 'Batalla de Clubs', description: 'Los clubs compiten por demostrar quién tiene el mejor proyecto, más estilo y presencia. Pasión por el motor en estado puro.', tag: 'COMPETICIÓN' },
-    { icon: '🚀', title: 'Lanzadas', description: 'Potencia pura en acción. Aceleraciones que ponen los pelos de punta y máquinas sacando todo su potencial en pista.', tag: 'VELOCIDAD' },
-    { icon: '🔥', title: 'Grip & Drift', description: 'Tandas de agarre y derrapes espectaculares. Humo, ruido, técnica y espectáculo asegurado para los fans del drifting.', tag: 'DRIFT' },
-    { icon: '🎁', title: 'Shows & Sorpresas', description: 'Animación constante, exhibiciones y regalos para el público. Aquí siempre están pasando cosas.', tag: 'SHOW' }
-  ];
-  state.schedule = [
-    { time: '10:00', title: 'Apertura de Puertas', description: 'Comienza la fiesta. Acceso al recinto, acreditaciones y primer contacto con la zona expo.' },
-    { time: '11:00', title: 'Inicio Zona Expo', description: 'Apertura oficial de la exposición de coches. Primeros pases por la pista.' },
-    { time: '12:00', title: 'Lanzadas — Sesión 1', description: 'Primeras aceleraciones en pista. Potencia pura en acción.' },
-    { time: '14:00', title: 'Música en Directo', description: 'Actuaciones musicales. El escenario principal cobra vida.' },
-    { time: '16:00', title: 'Batalla de Clubs', description: 'Los clubs compiten por el mejor proyecto y estilo. Ambiente competitivo.' },
-    { time: '18:00', title: 'Grip & Drift', description: 'Tandas de derrapes espectaculares. Humo, ruido y espectáculo asegurado.' },
-    { time: '20:00', title: 'Show de Clausura', description: 'Gran final con exhibiciones, sorpresas y el cierre por todo lo alto.' }
-  ];
-  state.stats = [
-    { number: '6+', label: 'Actividades' },
-    { number: '10h', label: 'Duración' },
-    { number: '1', label: 'Circuito' },
-    { number: '∞', label: 'Adrenalina' }
-  ];
-  state.sponsors = [
-    { name: 'DIAMOND SQUAD', subtitle: 'ORGANIZA' },
-    { name: 'FK1 CIRCUIT', subtitle: 'SEDE' },
-    { name: 'RPM FEST', subtitle: 'EVENTO' }
-  ];
-}
-
-// ========== STATUS / NOTIFY ==========
-
-function setStatus(text, cls) {
-  const el = $('conn-status');
-  el.textContent = text;
-  el.className = 'admin-nav-status' + (cls ? ' ' + cls : '');
-}
-
-function notify(msg, type = 'success') {
-  const el = document.createElement('div');
-  el.className = `notification ${type}`;
-  el.textContent = msg;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 3500);
-}
-
-// ========== COLLECT DATA ==========
-
-function collectData() {
-  const fns = { evento: collectEvento, hero: collectHero, actividades: collectActividades, horarios: collectHorarios, stats: collectStats, sponsors: collectSponsors };
-  if (fns[currentTab]) fns[currentTab]();
-}
-
-// ========== SAVE ==========
-
-function getDeployHook() {
-  return localStorage.getItem('rpmfest_deploy_hook') || '';
-}
-
-$('btn-save').addEventListener('click', async () => {
-  $('btn-save').textContent = 'Publicando...';
-  $('btn-save').disabled = true;
-
-  try {
-    collectData();
-    await saveToGitHub();
-    notify('Cambios publicados en GitHub ✅');
-
-    const hook = getDeployHook();
-    if (hook) {
-      notify('Redeploying Vercel...');
-      try { await fetch(hook, { method: 'POST' }); } catch {}
-    }
-  } catch (err) {
-    notify('Error: ' + err.message, 'error');
-  }
-
-  $('btn-save').textContent = 'Guardar Cambios';
-  $('btn-save').disabled = false;
-});
-
-async function saveToGitHub() {
-  const payload = {
-    config: state.config,
-    activities: state.activities,
-    schedule: state.schedule,
-    stats: state.stats,
-    sponsors: state.sponsors
-  };
-
-  const url = 'https://api.github.com/repos/LethalKrisixTools/rpmfest/contents/data/data.json';
-  const auth = { headers: { Authorization: 'Bearer ' + GH_TOKEN } };
-
-  if (!currentSha) {
-    try {
-      const getRes = await fetch(url, auth);
-      if (getRes.ok) currentSha = (await getRes.json()).sha;
-    } catch {}
-  }
-
-  const jsonStr = JSON.stringify(payload, null, 2);
-  const bytes = new TextEncoder().encode(jsonStr);
-  let binary = '';
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  const content = btoa(binary);
-
-  const body = { message: 'feat: actualizar datos evento desde panel admin', content, branch: 'main' };
-  if (currentSha) body.sha = currentSha;
-
-  const res = await fetch(url, {
-    method: 'PUT',
-    headers: { ...auth.headers, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-
-  if (!res.ok) {
-    let msg = 'Error HTTP ' + res.status;
-    try { msg = (await res.json()).message || msg; } catch {}
-    throw new Error(msg);
-  }
-
-  currentSha = (await res.json()).content.sha;
-}
-
-// ========== PREVIEW ==========
-
-$('btn-preview').addEventListener('click', () => {
-  $('preview-overlay').classList.remove('hidden');
-  $('preview-iframe').src = 'index.html';
-});
-
-$('btn-close-preview').addEventListener('click', () => {
-  $('preview-overlay').classList.add('hidden');
-  $('preview-iframe').src = '';
-});
-
-// ========== TABS ==========
-
-document.querySelectorAll('.sidebar-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentTab = btn.dataset.tab;
-    renderTab(currentTab);
-  });
-});
-
-function renderTab(tab) {
-  const titles = { evento:'Evento', hero:'Hero', actividades:'Actividades', horarios:'Horarios', stats:'Estadísticas', sponsors:'Sponsors' };
-  $('tab-title').textContent = titles[tab] || tab;
-  const renderers = { evento:renderEvento, hero:renderHero, actividades:renderActividades, horarios:renderHorarios, stats:renderStats, sponsors:renderSponsors };
-  $('tab-content').innerHTML = '';
-  if (renderers[tab]) renderers[tab]();
-}
-
-// ========== RENDERERS (sin cambios) ==========
-
-function renderEvento() {
-  const c = state.config;
-  $('tab-content').innerHTML = `
-    <div class="form-section"><div class="form-section-title">Información General</div><div class="form-grid">
-      <div class="form-group"><label>Nombre del evento</label><input id="f-name" value="${esc(c.name)}"></div>
-      <div class="form-group"><label>Organizador</label><input id="f-organizer" value="${esc(c.organizer)}"></div>
-      <div class="form-group"><label>Fecha</label><input id="f-date" value="${esc(c.date)}"></div>
-      <div class="form-group"><label>Estado</label><input id="f-status" value="${esc(c.status)}"></div>
-      <div class="form-group"><label>Localización</label><input id="f-location" value="${esc(c.location)}"></div>
-      <div class="form-group"><label>Código vestimenta</label><input id="f-dresscode" value="${esc(c.dressCode)}"></div>
-      <div class="form-group full"><label>Dirección</label><textarea id="f-address">${esc(c.address)}</textarea></div>
-    </div></div>
-    <div class="form-section"><div class="form-section-title">Descripción</div>
-      <div class="form-group full"><label>Descripción corta</label><textarea id="f-desc">${esc(c.descShort)}</textarea></div>
-      <div class="form-group full" style="margin-top:12px"><label>Frase destacada (quote)</label><input id="f-quote" value="${esc(c.quote)}"></div>
-    </div>`;
-}
-
-function collectEvento() {
-  ['name','organizer','date','status','location','dressCode','address','descShort','quote'].forEach(k => state.config[k] = $(k === 'dressCode' ? 'f-dresscode' : k === 'descShort' ? 'f-desc' : 'f-' + k).value);
-}
-
-function renderHero() {
-  const c = state.config;
-  $('tab-content').innerHTML = `
-    <div class="form-section"><div class="form-section-title">Hero Banner</div><div class="form-grid">
-      <div class="form-group"><label>Badge</label><input id="f-badge" value="${esc(c.badge)}"></div>
-      <div class="form-group"><label>Título</label><input id="f-title" value="${esc(c.title)}"></div>
-      <div class="form-group"><label>Subtítulo</label><input id="f-subtitle" value="${esc(c.subtitle)}"></div>
-      <div class="form-group"><label>Texto CTA</label><input id="f-cta" value="${esc(c.ctaText)}"></div>
-      <div class="form-group"><label>Link CTA</label><input id="f-ctalink" value="${esc(c.ctaLink)}"></div>
-      <div class="form-group"><label>Estado CTA</label><input id="f-ctastatus" value="${esc(c.ctaStatus)}"></div>
-    </div></div>`;
-}
-
-function collectHero() {
-  state.config.badge = $('f-badge').value;
-  state.config.title = $('f-title').value;
-  state.config.subtitle = $('f-subtitle').value;
-  state.config.ctaText = $('f-cta').value;
-  state.config.ctaLink = $('f-ctalink').value;
-  state.config.ctaStatus = $('f-ctastatus').value;
-}
-
-function renderActividades() {
-  let html = '<div class="form-section"><div class="form-section-title">Actividades</div><div class="card-list">';
-  state.activities.forEach((a, i) => {
-    html += `<div class="card-editor" data-index="${i}">
-      <input class="a-icon" value="${esc(a.icon)}" placeholder="Icono">
-      <input class="a-title" value="${esc(a.title)}" placeholder="Título">
-      <textarea class="a-desc" placeholder="Descripción">${esc(a.description)}</textarea>
-      <input class="a-tag" value="${esc(a.tag)}" placeholder="Tag">
-      <button class="btn-icon" onclick="removeActivity(${i})">✕</button>
-    </div>`;
-  });
-  html += '</div><button class="btn btn-small" style="margin-top:12px" onclick="addActivity()">+ Añadir actividad</button></div>';
-  $('tab-content').innerHTML = html;
-}
-
-function addActivity() {
-  state.activities.push({ icon:'🏁', title:'Nueva actividad', description:'Descripción', tag:'NUEVO' });
-  renderActividades();
-}
-function removeActivity(i) {
-  state.activities.splice(i, 1);
-  renderActividades();
-}
-function collectActividades() {
-  state.activities = Array.from($$('.card-editor')).map(el => ({
-    icon: el.querySelector('.a-icon').value,
-    title: el.querySelector('.a-title').value,
-    description: el.querySelector('.a-desc').value,
-    tag: el.querySelector('.a-tag').value
-  }));
-}
-
-function renderHorarios() {
-  let html = '<div class="form-section"><div class="form-section-title">Horarios</div><div class="card-list">';
-  state.schedule.forEach((s, i) => {
-    html += `<div class="card-editor" data-index="${i}">
-      <input class="s-time" value="${esc(s.time)}" placeholder="Hora" style="width:80px">
-      <input class="s-title" value="${esc(s.title)}" placeholder="Título">
-      <textarea class="s-desc" placeholder="Descripción">${esc(s.description)}</textarea>
-      <span></span>
-      <button class="btn-icon" onclick="removeSchedule(${i})">✕</button>
-    </div>`;
-  });
-  html += '</div><button class="btn btn-small" style="margin-top:12px" onclick="addSchedule()">+ Añadir horario</button></div>';
-  $('tab-content').innerHTML = html;
-}
-
-function addSchedule() {
-  state.schedule.push({ time:'00:00', title:'Nuevo horario', description:'Descripción' });
-  renderHorarios();
-}
-function removeSchedule(i) {
-  state.schedule.splice(i, 1);
-  renderHorarios();
-}
-function collectHorarios() {
-  state.schedule = Array.from($$('.card-editor')).map(el => ({
-    time: el.querySelector('.s-time').value,
-    title: el.querySelector('.s-title').value,
-    description: el.querySelector('.s-desc').value
-  }));
-}
-
-function renderStats() {
-  let html = '<div class="form-section"><div class="form-section-title">Estadísticas</div><div class="card-list">';
-  state.stats.forEach((s, i) => {
-    html += `<div class="card-editor" data-index="${i}" style="grid-template-columns:100px 1fr auto">
-      <input class="st-num" value="${esc(s.number)}" placeholder="Número">
-      <input class="st-label" value="${esc(s.label)}" placeholder="Etiqueta">
-      <button class="btn-icon" onclick="removeStat(${i})">✕</button>
-    </div>`;
-  });
-  html += '</div><button class="btn btn-small" style="margin-top:12px" onclick="addStat()">+ Añadir estadística</button></div>';
-  $('tab-content').innerHTML = html;
-}
-
-function addStat() {
-  state.stats.push({ number:'0', label:'Nueva' });
-  renderStats();
-}
-function removeStat(i) {
-  state.stats.splice(i, 1);
-  renderStats();
-}
-function collectStats() {
-  state.stats = Array.from($$('.card-editor')).map(el => ({
-    number: el.querySelector('.st-num').value,
-    label: el.querySelector('.st-label').value
-  }));
-}
-
-function renderSponsors() {
-  let html = '<div class="form-section"><div class="form-section-title">Sponsors</div><div class="sponsor-list">';
-  state.sponsors.forEach((s, i) => {
-    html += `<div class="sponsor-editor" data-index="${i}">
-      <input class="sp-name" value="${esc(s.name)}" placeholder="Nombre">
-      <input class="sp-sub" value="${esc(s.subtitle)}" placeholder="Rol">
-      <button class="btn-icon" onclick="removeSponsor(${i})">✕</button>
-    </div>`;
-  });
-  html += '</div><button class="btn btn-small" style="margin-top:12px" onclick="addSponsor()">+ Añadir sponsor</button></div>';
-  $('tab-content').innerHTML = html;
-}
-
-function addSponsor() {
-  state.sponsors.push({ name:'NUEVO', subtitle:'SPONSOR' });
-  renderSponsors();
-}
-function removeSponsor(i) {
-  state.sponsors.splice(i, 1);
-  renderSponsors();
-}
-function collectSponsors() {
-  state.sponsors = Array.from($$('.sponsor-editor')).map(el => ({
-    name: el.querySelector('.sp-name').value,
-    subtitle: el.querySelector('.sp-sub').value
-  }));
-}
-
-// ========== UTILS ==========
-
-function esc(str) {
-  if (!str) return '';
-  const d = document.createElement('div');
-  d.textContent = str;
-  return d.innerHTML;
-}
-
-// ========== INIT ==========
-
-function init() {
-  loadStoredValues();
-  loadData();
-}
+function productTemplate(p,i){const imgs=p.images||[];return `<div class="card-editor store-product" data-index="${i}"><div style="display:flex;gap:12px;align-items:center"><img class="admin-product-thumb" src="${esc(imgs[0]||'../assets/product-placeholder.svg')}" alt=""><div style="flex:1"><strong>${esc(p.name||'Nuevo producto')}</strong><div class="admin-muted">${esc(p.category||'Sin categoría')}</div></div><button class="btn btn-small" type="button" onclick="previewAdminProduct(${i})">Preview</button><button class="btn btn-small" type="button" onclick="removeProduct(${i})">Eliminar</button></div><div class="form-grid" style="margin-top:12px"><div class="form-group"><label>Nombre</label><input class="p-name" value="${esc(p.name)}"></div><div class="form-group"><label>Precio (€)</label><input class="p-price" type="number" step="0.01" min="0" value="${esc(p.price)}"></div><div class="form-group"><label>Stock (-1 = ilimitado)</label><input class="p-stock" type="number" step="1" value="${esc(p.stock??-1)}"></div><div class="form-group"><label>Categoría</label><input class="p-category" value="${esc(p.category||'MERCH')}"></div><div class="form-group full"><label>Descripción corta</label><input class="p-short" value="${esc(p.shortDescription||'')}"></div><div class="form-group full"><label>Descripción completa</label><textarea class="p-desc">${esc(p.description||'')}</textarea></div><div class="form-group"><label>Imagen 1</label><input class="p-image" type="file" accept="image/*"></div><div class="form-group"><label>Imagen 2</label><input class="p-image" type="file" accept="image/*"></div><div class="form-group"><label>Imagen 3</label><input class="p-image" type="file" accept="image/*"></div><div class="form-group"><label>Imagen 4</label><input class="p-image" type="file" accept="image/*"></div><div class="form-group"><label><input class="p-active" type="checkbox" ${p.active!==false?'checked':''}> Activo</label></div><div class="form-group"><label><input class="p-featured" type="checkbox" ${p.featured?'checked':''}> Destacado</label></div></div><div class="admin-image-list">${imgs.map(x=>`<span>${esc(x)}</span>`).join(' ')||'<span>Sin imágenes subidas todavía.</span>'}</div></div>`}
+function renderTienda(){let html='<div class="form-section"><div class="form-section-title">Tienda</div><p class="admin-muted">Los productos se publican en <strong>/tienda</strong>. Las imágenes se suben al repositorio al pulsar Guardar.</p><button class="btn btn-primary" type="button" onclick="addProduct()">+ Añadir producto</button><div class="card-list">';state.products.forEach((p,i)=>html+=productTemplate(p,i));if(!state.products.length)html+='<div class="empty-admin">No hay productos. Añade el primero.</div>';html+='</div></div>';html+='<div class="form-section"><div class="form-section-title">Pagos</div><p class="admin-muted">La pasarela está preparada para Mollie. Las claves privadas no se guardan en el frontend y se configuran en Vercel.</p><p class="admin-muted">Métodos objetivo: tarjeta, PayPal y Bizum.</p></div>'; $('tab-content').innerHTML=html}
+function collectProducts(){document.querySelectorAll('.store-product').forEach((el,i)=>{const p=state.products[i];p.name=el.querySelector('.p-name').value;p.price=Number(el.querySelector('.p-price').value)||0;p.stock=Number(el.querySelector('.p-stock').value);p.category=el.querySelector('.p-category').value;p.shortDescription=el.querySelector('.p-short').value;p.description=el.querySelector('.p-desc').value;p.active=el.querySelector('.p-active').checked;p.featured=el.querySelector('.p-featured').checked;p._files=[...el.querySelectorAll('.p-image')].map(x=>x.files[0]).filter(Boolean)})}
+async function saveStore(){for(const p of state.products){if(!p.id)p.id='prod-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);p.images=p.images||[];for(const f of (p._files||[])){const path='assets/store/'+p.id+'-'+Date.now()+'-'+Math.random().toString(36).slice(2,6)+'.'+fileExt(f);await uploadImage(f,path);p.images.push(path);p.images=p.images.slice(-8)}delete p._files}await saveJson('data/store.json','store',{currency:'EUR',products:state.products},'feat: actualizar tienda desde panel admin');renderTienda()}
+function addProduct(){collectProducts();state.products.push({id:'prod-'+Date.now(),name:'Nuevo producto',price:0,stock:-1,category:'MERCH',shortDescription:'',description:'',images:[],active:true,featured:false});renderTienda()}
+function removeProduct(i){if(!confirm('¿Eliminar este producto de la tienda?'))return;state.products.splice(i,1);renderTienda()}
+function previewAdminProduct(i){const p=state.products[i];const imgs=p.images&&p.images.length?p.images:['../assets/product-placeholder.svg'];const html=`<div style="max-width:420px;background:#100b0d;border:1px solid #3b2023;border-radius:12px;overflow:hidden"><img style="width:100%;aspect-ratio:1;object-fit:cover" src="${esc(imgs[0])}"><div style="padding:20px"><div class="admin-muted">${esc(p.category||'MERCH')}</div><h2>${esc(p.name)}</h2><p class="admin-muted">${esc(p.description||p.shortDescription||'')}</p><h2>${money(p.price)}</h2></div></div>`;const wrap=document.createElement('div');wrap.className='preview-overlay';wrap.innerHTML='<div class="preview-header"><span>Preview producto</span><button class="btn btn-small">Cerrar</button></div><div style="padding:30px;display:flex;justify-content:center;overflow:auto"></div>';wrap.querySelector('div:last-child').innerHTML=html;wrap.querySelector('button').onclick=()=>wrap.remove();document.body.appendChild(wrap)}
+function money(n){return new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(Number(n)||0)}
+function renderPedidos(){if(!state.orders.length){$('tab-content').innerHTML='<div class="form-section"><div class="form-section-title">Pedidos</div><div class="empty-admin">Todavía no hay pedidos confirmados.</div></div>';return}let html='<div class="form-section"><div class="form-section-title">Pedidos confirmados</div><div style="overflow:auto"><table class="admin-orders"><thead><tr><th>Pedido</th><th>Fecha</th><th>Cliente</th><th>Productos</th><th>Total</th><th>Método</th><th>Estado</th></tr></thead><tbody>';for(const o of state.orders)html+=`<tr><td>${esc(o.id)}</td><td>${esc(new Date(o.paidAt||o.createdAt).toLocaleString('es-ES'))}</td><td>${esc(o.customer?.name||'')}<br>${esc(o.customer?.email||'')}</td><td>${(o.items||[]).map(i=>esc(i.name)+' × '+esc(i.qty)).join('<br>')}</td><td>${money(o.amount?.value||0)}</td><td>${esc(o.method||'')}</td><td>${esc(o.status||'')}</td></tr>`;html+='</tbody></table></div></div>'; $('tab-content').innerHTML=html}
