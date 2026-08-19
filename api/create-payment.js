@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 function getStore() {
   const file = path.join(process.cwd(), 'data', 'store.json');
@@ -10,6 +11,14 @@ function json(res, status, body) {
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.end(JSON.stringify(body));
+}
+
+function createTrackingToken(paymentId) {
+  const secret = process.env.ORDER_TRACK_SECRET;
+  if (!secret) throw new Error('Falta configurar ORDER_TRACK_SECRET en Vercel.');
+  const payload = Buffer.from(JSON.stringify({ p: paymentId, t: Date.now() }), 'utf8').toString('base64url');
+  const signature = crypto.createHmac('sha256', secret).update(payload).digest('base64url');
+  return `${payload}.${signature}`;
 }
 
 module.exports = async function handler(req, res) {
@@ -58,7 +67,7 @@ module.exports = async function handler(req, res) {
       body: JSON.stringify({
         amount: { currency: store.currency || 'EUR', value: amount },
         description: `RPM Fest · Pedido ${orderId}`,
-        redirectUrl: `${origin}/tienda?payment=success&order=${encodeURIComponent(orderId)}`,
+        redirectUrl: `${origin}/pedido.html?order=${encodeURIComponent(orderId)}`,
         webhookUrl: `${origin}/api/mollie-webhook`,
         metadata: { orderId, customer, items: normalized }
       })
@@ -67,10 +76,14 @@ module.exports = async function handler(req, res) {
     const payment = await paymentResponse.json();
     if (!paymentResponse.ok) return json(res, 502, { error: payment?.detail || 'No se pudo crear el pago.' });
 
+    const trackingToken = createTrackingToken(payment.id);
+
     return json(res, 200, {
       orderId,
       checkoutUrl: payment?._links?.checkout?.href,
-      paymentId: payment.id
+      paymentId: payment.id,
+      trackingToken,
+      trackingUrl: `${origin}/pedido.html?token=${encodeURIComponent(trackingToken)}`
     });
   } catch (error) {
     return json(res, 500, { error: error.message || 'Error interno.' });
