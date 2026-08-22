@@ -44,9 +44,14 @@ async function main() {
 
   for (const legacy of products) {
     const images: string[] = [];
-    for (const img of legacy.images) {
-      const url = await uploadImage(img, legacy.id);
-      if (url) images.push(url);
+    try {
+      for (const img of legacy.images) {
+        const url = await uploadImage(img, legacy.id);
+        if (url) images.push(url);
+      }
+    } catch (error) {
+      console.error(`Failed to upload image(s) for ${legacy.id}:`, error);
+      continue;
     }
 
     const { error } = await supabase.from('products').upsert(
@@ -73,4 +78,9 @@ async function main() {
   }
 }
 
-main().then(() => process.exit(0));
+main()
+  .then(() => process.exit(0))
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
