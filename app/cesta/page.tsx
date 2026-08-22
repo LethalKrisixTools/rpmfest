@@ -20,29 +20,33 @@ export default function CestaPage() {
   const [error, setError] = useState<string | null>(null);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
 
+  async function refresh() {
+    const supabase = createClient();
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+    setLoggedIn(!!user);
+
+    const cartLines = user ? await fetchAccountCart() : getGuestCart();
+    setLines(cartLines);
+
+    if (cartLines.length > 0) {
+      const { data, error: productsError } = await supabase
+        .from('products')
+        .select('*')
+        .in('id', cartLines.map((l) => l.productId))
+        .returns<Product[]>();
+      if (productsError) throw productsError;
+      setProducts(Object.fromEntries((data ?? []).map((p) => [p.id, p])));
+    } else {
+      setProducts({});
+    }
+  }
+
   async function load() {
     setLoading(true);
     try {
-      const supabase = createClient();
-      const {
-        data: { user }
-      } = await supabase.auth.getUser();
-      setLoggedIn(!!user);
-
-      const cartLines = user ? await fetchAccountCart() : getGuestCart();
-      setLines(cartLines);
-
-      if (cartLines.length > 0) {
-        const { data, error: productsError } = await supabase
-          .from('products')
-          .select('*')
-          .in('id', cartLines.map((l) => l.productId))
-          .returns<Product[]>();
-        if (productsError) throw productsError;
-        setProducts(Object.fromEntries((data ?? []).map((p) => [p.id, p])));
-      } else {
-        setProducts({});
-      }
+      await refresh();
       setError(null);
     } catch {
       setError('No se pudo cargar tu cesta. Inténtalo de nuevo.');
@@ -56,6 +60,7 @@ export default function CestaPage() {
   }, []);
 
   async function changeQty(productId: string, qty: number) {
+    setError(null);
     setPendingIds((prev) => new Set(prev).add(productId));
     try {
       if (loggedIn) {
@@ -63,11 +68,10 @@ export default function CestaPage() {
       } else {
         updateGuestCartQty(productId, qty);
       }
-      setError(null);
+      await refresh();
     } catch {
       setError('No se pudo actualizar tu cesta. Inténtalo de nuevo.');
     } finally {
-      await load();
       setPendingIds((prev) => {
         const next = new Set(prev);
         next.delete(productId);
@@ -90,7 +94,7 @@ export default function CestaPage() {
       <main className="mx-auto grid max-w-6xl gap-8 px-5 py-10 md:grid-cols-[1.6fr_1fr]">
         <div>
           <h1 className="mb-4 text-2xl font-black text-white-warm">Tu cesta</h1>
-          {lines.length === 0 && <p className="text-text-muted">Tu cesta está vacía.</p>}
+          {lines.length === 0 && !error && <p className="text-text-muted">Tu cesta está vacía.</p>}
           {lines.map((line) => {
             const product = products[line.productId];
             if (!product) return null;
