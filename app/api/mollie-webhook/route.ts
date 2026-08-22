@@ -33,9 +33,20 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
 
   if (payment.status === 'paid') {
-    await admin.rpc('mark_order_paid', { p_order_id: orderId });
+    const { error } = await admin.rpc('mark_order_paid', { p_order_id: orderId });
+    if (error) {
+      console.error('mollie-webhook: mark_order_paid failed', orderId, error);
+      return NextResponse.json({ error: 'Failed to sync order status.' }, { status: 500 });
+    }
   } else if (['failed', 'canceled', 'expired'].includes(payment.status)) {
-    await admin.rpc('restore_stock_for_order', { p_order_id: orderId, p_new_status: payment.status });
+    const { error } = await admin.rpc('restore_stock_for_order', {
+      p_order_id: orderId,
+      p_new_status: payment.status,
+    });
+    if (error) {
+      console.error('mollie-webhook: restore_stock_for_order failed', orderId, error);
+      return NextResponse.json({ error: 'Failed to restore stock.' }, { status: 500 });
+    }
   }
   // Other statuses (open, pending, authorized) require no action yet.
 
