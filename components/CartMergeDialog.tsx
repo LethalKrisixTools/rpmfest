@@ -1,37 +1,62 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { clearGuestCart, getGuestCart, mergeCartLines } from '@/lib/cart';
 import { fetchAccountCart, replaceAccountCart } from '@/lib/cart-sync';
+import type { CartLine } from '@/lib/types';
 
 export function CartMergeDialog({ onDone }: { onDone: () => void }) {
   const [busy, setBusy] = useState(false);
-  const guestLines = getGuestCart();
+  const [error, setError] = useState<string | null>(null);
+  const [guestLines, setGuestLines] = useState<CartLine[]>([]);
+  const [ready, setReady] = useState(false);
+  const mergeButtonRef = useRef<HTMLButtonElement>(null);
 
-  if (guestLines.length === 0) return null;
+  useEffect(() => {
+    setGuestLines(getGuestCart());
+    setReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (ready && guestLines.length > 0) {
+      mergeButtonRef.current?.focus();
+    }
+  }, [ready, guestLines.length]);
+
+  if (!ready || guestLines.length === 0) return null;
 
   async function handleChoice(shouldMerge: boolean) {
     setBusy(true);
+    setError(null);
     try {
       if (shouldMerge) {
         const accountLines = await fetchAccountCart();
         await replaceAccountCart(mergeCartLines(accountLines, guestLines));
       }
       clearGuestCart();
+      onDone();
+    } catch {
+      setError('No se pudo actualizar tu cesta. Inténtalo de nuevo.');
     } finally {
       setBusy(false);
-      onDone();
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="cart-merge-dialog-title"
+    >
       <div className="max-w-sm rounded-xl border border-border-subtle bg-bg-dark p-6 text-center">
-        <p className="text-white-warm">
+        <h2 id="cart-merge-dialog-title" className="text-white-warm">
           Tenías productos en tu cesta de invitado. ¿Quieres añadirlos a tu cesta guardada?
-        </p>
+        </h2>
+        {error && <p className="mt-2 text-sm text-red-mid">{error}</p>}
         <div className="mt-6 flex flex-col gap-2">
           <button
+            ref={mergeButtonRef}
             type="button"
             disabled={busy}
             onClick={() => handleChoice(true)}
