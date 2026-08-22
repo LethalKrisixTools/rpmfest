@@ -15,7 +15,13 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     <article className="flex flex-col overflow-hidden rounded-xl border border-border-subtle bg-bg-dark">
       <Link href={`/tienda/${product.slug}`} className="relative block aspect-square bg-bg-mid">
-        <Image src={image} alt={product.name} fill className="object-cover" />
+        <Image
+          src={image}
+          alt={product.name}
+          fill
+          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+          className="object-cover"
+        />
         {product.featured && (
           <span className="absolute left-2 top-2 rounded bg-gold px-2 py-1 text-xs font-bold text-bg-darkest">
             DESTACADO
