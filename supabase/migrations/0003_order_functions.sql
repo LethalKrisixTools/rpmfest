@@ -24,11 +24,13 @@ declare
   v_amount_cents integer := 0;
   v_order public.orders;
 begin
+  drop table if exists _order_lines;
   create temporary table _order_lines (
     product_id uuid, product_name text, unit_price_cents integer, image text, qty integer
   ) on commit drop;
 
   for v_item in select * from jsonb_to_recordset(p_items) as x(product_id uuid, qty integer)
+    order by x.product_id
   loop
     if v_item.qty is null or v_item.qty < 1 then
       raise exception 'INVALID_QTY';
