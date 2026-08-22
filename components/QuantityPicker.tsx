@@ -12,7 +12,7 @@ export function QuantityPicker({
   const [qty, setQty] = useState(1);
 
   function update(next: number) {
-    const clamped = Math.max(1, max ? Math.min(next, max) : next);
+    const clamped = Math.max(1, typeof max === 'number' ? Math.min(next, max) : next);
     setQty(clamped);
     onChange(clamped);
   }
@@ -22,6 +22,7 @@ export function QuantityPicker({
       <button
         type="button"
         onClick={() => update(qty - 1)}
+        aria-label="Reducir cantidad"
         className="h-8 w-8 rounded-full border border-border-subtle text-white-warm"
       >
         −
@@ -30,6 +31,7 @@ export function QuantityPicker({
       <button
         type="button"
         onClick={() => update(qty + 1)}
+        aria-label="Aumentar cantidad"
         className="h-8 w-8 rounded-full border border-border-subtle text-white-warm"
       >
         +
