@@ -23,8 +23,9 @@ No existen cuentas de cliente: toda compra es como invitado, con seguimiento de 
 - `/checkout/confirmacion/[pedido]` — confirmación post-pago
 - `/pedido` — seguimiento de pedido sin cuenta
 - `/login`, `/registro` — acceso de clientes
-- `/cuenta` — historial de pedidos + dirección guardada
+- `/cuenta` — historial de pedidos + dirección guardada + derechos RGPD (exportar/eliminar datos)
 - `/admin` — panel admin (productos y pedidos)
+- `/privacidad`, `/terminos`, `/cookies` — páginas legales (política de privacidad, términos de compra, política de cookies)
 
 **Fuera de alcance** (no se tocan): `index.html`, `eventos.html`, `data/data.json` y su carga vía `js/data-loader.js` siguen siendo HTML/JS estático, servidos desde `public/` de la nueva app Next.js.
 
@@ -60,6 +61,7 @@ No existen cuentas de cliente: toda compra es como invitado, con seguimiento de 
 | phone | text | opcional |
 | default_address, default_city, default_postal_code | text | dirección guardada para autorrelleno en checkout |
 | role | text | `customer` (default) o `admin` |
+| terms_accepted_at | timestamptz | fecha en que aceptó política de privacidad/términos al registrarse (evidencia de consentimiento, RGPD art. 7) |
 | created_at | timestamptz | |
 
 ### `products`
@@ -99,6 +101,8 @@ Solo para clientes con sesión iniciada. Los invitados usan `localStorage` (no s
 | amount_cents, currency | int/text | |
 | status | text | `pending` · `paid` · `failed` · `canceled` · `expired` |
 | mollie_payment_id | text unique | |
+| privacy_consent_at | timestamptz | fecha en que aceptó la política de privacidad para esta compra (necesario también para invitados sin perfil) |
+| anonymized_at | timestamptz, nullable | se rellena si el cliente ejerce su derecho de supresión; a partir de entonces `customer_name`/`shipping_address` quedan anonimizados |
 | created_at, paid_at | timestamptz | |
 
 ### `order_items`
@@ -185,7 +189,35 @@ El proyecto no tiene infraestructura de tests hoy. Se añade Vitest para lo que 
 
 El flujo de pago real con Mollie se valida manualmente en modo test antes de pasar a producción — no es realista automatizar de extremo a extremo un pago real.
 
-## 13. Decisiones visuales aprobadas
+## 13. Cumplimiento RGPD / LOPDGDD
+
+Marco legal aplicable: Reglamento (UE) 2016/679 (RGPD), LOPDGDD (España) y LSSI-CE (cookies). Alojamiento de datos en la UE en todo momento: Supabase en `eu-west-1` (Irlanda) y Mollie en Países Bajos — sin transferencias fuera del EEE.
+
+**Base legal de tratamiento:**
+- Datos de envío/facturación (nombre, email, dirección): ejecución del contrato de compraventa (art. 6.1.b RGPD) — se piden solo los campos estrictamente necesarios para procesar y enviar el pedido (minimización de datos).
+- Cuenta de cliente (email, contraseña, historial): consentimiento explícito al registrarse (art. 6.1.a).
+- No se planea ningún uso de los datos para marketing o publicidad; si en el futuro se añadiera, requeriría un consentimiento explícito y separado (opt-in), fuera de alcance de este proyecto.
+
+**Páginas legales nuevas** (enlazadas desde el footer de todas las páginas de tienda y desde los checkboxes de consentimiento):
+- `/privacidad` — identidad del responsable del tratamiento, finalidades, base legal, plazos de conservación, destinatarios (Supabase y Mollie como encargados de tratamiento) y cómo ejercer derechos.
+- `/terminos` — condiciones de compra, devoluciones, envíos.
+- `/cookies` — declara que solo se usan cookies técnicas/esenciales (sesión de Supabase Auth para mantener el login, estado de la cesta). Al ser estrictamente necesarias para el funcionamiento del sitio, no requieren banner de consentimiento previo según el RGPD/LSSI-CE, pero se informa igualmente por transparencia. Si en el futuro se añadieran cookies de analítica o marketing, sí exigirían un banner de consentimiento previo — no es el caso hoy.
+
+**Consentimiento explícito y verificable** (principio de responsabilidad proactiva, art. 5.2 RGPD):
+- Checkbox obligatorio y **no premarcado** ("He leído y acepto la Política de Privacidad") en `/registro` y en el paso 2 del checkout de invitado. No se puede continuar sin marcarlo.
+- Se guarda la fecha de aceptación (`profiles.terms_accepted_at` para cuentas, `orders.privacy_consent_at` para cada pedido, incluidos los de invitado) como evidencia de consentimiento.
+
+**Derechos del interesado (acceso, rectificación, supresión, portabilidad, oposición) — implementados en `/cuenta`:**
+- **Acceso y rectificación**: el cliente ya puede ver y editar su perfil y consultar su historial de pedidos.
+- **Portabilidad**: botón "Descargar mis datos" que exporta perfil + historial de pedidos en JSON.
+- **Supresión ("derecho al olvido")**: botón "Eliminar mi cuenta". Como España exige conservar los datos contables/fiscales de una compra (mínimo 4 años, normativa tributaria; 6 años, Código de Comercio), los pedidos **no se borran físicamente** — se anonimiza la información personal (`customer_name`, `shipping_address`, etc. se sustituyen por valores anonimizados, `anonymized_at` se rellena) conservando solo lo obligatorio a efectos contables (importe, fecha, nº de pedido). El usuario se elimina de Supabase Auth y su `profile` se anonimiza.
+- **Invitados sin cuenta**: al no tener panel propio, `/privacidad` incluye un email de contacto para ejercer estos derechos manualmente; el equipo del evento localiza el pedido por nº de pedido + email y aplica la misma anonimización.
+
+**Conservación de datos:** se documenta explícitamente en `/privacidad` el plazo de conservación (duración legal fiscal/contable). La purga o revisión automática de datos tras ese plazo (p. ej. mediante un job programado) queda fuera de alcance de esta iteración y se deja anotada como mejora futura recomendada.
+
+**Encargados de tratamiento:** Supabase y Mollie procesan datos personales en nombre del negocio. Es responsabilidad del propietario del proyecto (fuera del alcance de este código) verificar que ambos tienen un Acuerdo de Encargado de Tratamiento (DPA) vigente y aceptado — ambos lo ofrecen de forma estándar.
+
+## 14. Decisiones visuales aprobadas
 
 - **Tarjeta de producto** (grid `/tienda`): imagen y nombre clicables hacia la ficha; botones apilados con "COMPRAR YA" en dorado destacado sobre "+ AÑADIR AL CARRITO" en outline.
 - **Ficha de producto**: galería a la izquierda (imagen principal + miniaturas), info a la derecha, botones apilados.
