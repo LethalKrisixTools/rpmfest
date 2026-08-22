@@ -87,33 +87,53 @@ export async function POST(request: Request) {
   const origin = new URL(request.url).origin;
   const amount = (order.amount_cents / 100).toFixed(2);
 
-  const paymentResponse = await fetch('https://api.mollie.com/v2/payments', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${process.env.MOLLIE_API_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      amount: { currency: order.currency, value: amount },
-      description: `RPM Fest · Pedido ${order.order_number}`,
-      redirectUrl: `${origin}/checkout/confirmacion/${order.order_number}`,
-      webhookUrl: `${origin}/api/mollie-webhook`,
-      metadata: { orderId: order.id, orderNumber: order.order_number }
-    })
-  });
-  const payment = await paymentResponse.json();
+  let payment: { id?: string; detail?: string; _links?: { checkout?: { href?: string } } } | null = null;
+  let paymentOk = false;
 
-  if (!paymentResponse.ok) {
-    await admin.rpc('restore_stock_for_order', { p_order_id: order.id, p_new_status: 'failed' });
+  try {
+    const paymentResponse = await fetch('https://api.mollie.com/v2/payments', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.MOLLIE_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        amount: { currency: order.currency, value: amount },
+        description: `RPM Fest · Pedido ${order.order_number}`,
+        redirectUrl: `${origin}/checkout/confirmacion/${order.order_number}`,
+        webhookUrl: `${origin}/api/mollie-webhook`,
+        metadata: { orderId: order.id, orderNumber: order.order_number }
+      })
+    });
+    payment = await paymentResponse.json();
+    paymentOk = paymentResponse.ok;
+  } catch (err) {
+    console.error('checkout: Mollie payment request failed', order.id, err);
+  }
+
+  if (!paymentOk) {
+    const { error: restoreStockError } = await admin.rpc('restore_stock_for_order', {
+      p_order_id: order.id,
+      p_new_status: 'failed'
+    });
+    if (restoreStockError) {
+      console.error('checkout: restore_stock_for_order failed', order.id, restoreStockError);
+    }
     return NextResponse.json({ error: payment?.detail || 'No se pudo crear el pago.' }, { status: 502 });
   }
 
-  await admin.from('orders').update({ mollie_payment_id: payment.id }).eq('id', order.id);
+  const { error: updatePaymentIdError } = await admin
+    .from('orders')
+    .update({ mollie_payment_id: payment?.id })
+    .eq('id', order.id);
+  if (updatePaymentIdError) {
+    console.error('checkout: failed to store mollie_payment_id', order.id, updatePaymentIdError);
+  }
 
   const trackingToken = createTrackingToken(order.id);
 
   return NextResponse.json({
-    checkoutUrl: payment._links?.checkout?.href,
+    checkoutUrl: payment?._links?.checkout?.href,
     orderNumber: order.order_number,
     trackingToken,
     trackingUrl: `${origin}/pedido?token=${encodeURIComponent(trackingToken)}`
