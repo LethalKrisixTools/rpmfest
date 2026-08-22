@@ -17,29 +17,38 @@ export default function CestaPage() {
   const [lines, setLines] = useState<CartLine[]>([]);
   const [products, setProducts] = useState<Record<string, Product>>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
 
   async function load() {
     setLoading(true);
-    const supabase = createClient();
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
-    setLoggedIn(!!user);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user }
+      } = await supabase.auth.getUser();
+      setLoggedIn(!!user);
 
-    const cartLines = user ? await fetchAccountCart() : getGuestCart();
-    setLines(cartLines);
+      const cartLines = user ? await fetchAccountCart() : getGuestCart();
+      setLines(cartLines);
 
-    if (cartLines.length > 0) {
-      const { data } = await supabase
-        .from('products')
-        .select('*')
-        .in('id', cartLines.map((l) => l.productId))
-        .returns<Product[]>();
-      setProducts(Object.fromEntries((data ?? []).map((p) => [p.id, p])));
-    } else {
-      setProducts({});
+      if (cartLines.length > 0) {
+        const { data, error: productsError } = await supabase
+          .from('products')
+          .select('*')
+          .in('id', cartLines.map((l) => l.productId))
+          .returns<Product[]>();
+        if (productsError) throw productsError;
+        setProducts(Object.fromEntries((data ?? []).map((p) => [p.id, p])));
+      } else {
+        setProducts({});
+      }
+      setError(null);
+    } catch {
+      setError('No se pudo cargar tu cesta. Inténtalo de nuevo.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   useEffect(() => {
@@ -47,12 +56,24 @@ export default function CestaPage() {
   }, []);
 
   async function changeQty(productId: string, qty: number) {
-    if (loggedIn) {
-      await upsertAccountCartLine(productId, qty);
-    } else {
-      updateGuestCartQty(productId, qty);
+    setPendingIds((prev) => new Set(prev).add(productId));
+    try {
+      if (loggedIn) {
+        await upsertAccountCartLine(productId, qty);
+      } else {
+        updateGuestCartQty(productId, qty);
+      }
+      setError(null);
+    } catch {
+      setError('No se pudo actualizar tu cesta. Inténtalo de nuevo.');
+    } finally {
+      await load();
+      setPendingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(productId);
+        return next;
+      });
     }
-    load();
   }
 
   const total = lines.reduce((sum, l) => {
@@ -65,6 +86,7 @@ export default function CestaPage() {
   return (
     <>
       <Navbar />
+      {error && <p className="mx-auto max-w-6xl px-5 pt-6 text-sm text-red-mid">{error}</p>}
       <main className="mx-auto grid max-w-6xl gap-8 px-5 py-10 md:grid-cols-[1.6fr_1fr]">
         <div>
           <h1 className="mb-4 text-2xl font-black text-white-warm">Tu cesta</h1>
@@ -79,6 +101,7 @@ export default function CestaPage() {
                 qty={line.qty}
                 onChangeQty={(qty) => changeQty(line.productId, qty)}
                 onRemove={() => changeQty(line.productId, 0)}
+                disabled={pendingIds.has(line.productId)}
               />
             );
           })}

@@ -8,12 +8,14 @@ export function CartLineRow({
   product,
   qty,
   onChangeQty,
-  onRemove
+  onRemove,
+  disabled
 }: {
   product: Product;
   qty: number;
   onChangeQty: (qty: number) => void;
   onRemove: () => void;
+  disabled?: boolean;
 }) {
   return (
     <div className="grid grid-cols-[64px_1fr_auto_auto] items-center gap-4 border-b border-border-subtle py-4">
@@ -31,15 +33,32 @@ export function CartLineRow({
         <div className="text-sm text-text-muted">{formatCents(product.price_cents)} / ud.</div>
       </div>
       <div className="flex items-center gap-2">
-        <button type="button" onClick={() => onChangeQty(qty - 1)} className="h-7 w-7 rounded-full border border-border-subtle text-white-warm">
+        <button
+          type="button"
+          onClick={() => onChangeQty(qty - 1)}
+          disabled={disabled}
+          aria-label="Reducir cantidad"
+          className="h-7 w-7 rounded-full border border-border-subtle text-white-warm disabled:opacity-40"
+        >
           −
         </button>
         <span className="text-white-warm">{qty}</span>
-        <button type="button" onClick={() => onChangeQty(qty + 1)} className="h-7 w-7 rounded-full border border-border-subtle text-white-warm">
+        <button
+          type="button"
+          onClick={() => onChangeQty(qty + 1)}
+          disabled={disabled}
+          aria-label="Aumentar cantidad"
+          className="h-7 w-7 rounded-full border border-border-subtle text-white-warm disabled:opacity-40"
+        >
           +
         </button>
       </div>
-      <button type="button" onClick={onRemove} className="text-xs text-text-muted underline">
+      <button
+        type="button"
+        onClick={onRemove}
+        disabled={disabled}
+        className="text-xs text-text-muted underline disabled:opacity-40"
+      >
         Quitar
       </button>
     </div>
