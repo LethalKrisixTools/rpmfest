@@ -6,7 +6,9 @@ export function getGuestCart(): CartLine[] {
   if (typeof window === 'undefined') return [];
   try {
     const raw = window.localStorage.getItem(CART_KEY);
-    return raw ? (JSON.parse(raw) as CartLine[]) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as CartLine[]) : [];
   } catch {
     return [];
   }
@@ -14,7 +16,11 @@ export function getGuestCart(): CartLine[] {
 
 export function setGuestCart(lines: CartLine[]): void {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(CART_KEY, JSON.stringify(lines));
+  try {
+    window.localStorage.setItem(CART_KEY, JSON.stringify(lines));
+  } catch {
+    // Storage full or unavailable (e.g. Safari private browsing) — fail silently.
+  }
 }
 
 export function clearGuestCart(): void {
