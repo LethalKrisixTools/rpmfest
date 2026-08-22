@@ -37,10 +37,30 @@ export async function replaceAccountCart(lines: CartLine[]): Promise<void> {
   } = await supabase.auth.getUser();
   if (!user) throw new Error('NOT_AUTHENTICATED');
 
-  await supabase.from('cart_items').delete().eq('user_id', user.id);
-  if (lines.length === 0) return;
+  if (lines.length === 0) {
+    const { error } = await supabase.from('cart_items').delete().eq('user_id', user.id);
+    if (error) throw error;
+    return;
+  }
 
+  // Upsert the new/kept lines first so the account cart is never left in a
+  // fully-empty transient state between the two round-trips. Only after the
+  // new state is durably written do we delete stale rows that are no longer
+  // present in `lines`.
   const rows = lines.map((l) => ({ user_id: user.id, product_id: l.productId, qty: l.qty }));
-  const { error } = await supabase.from('cart_items').insert(rows);
-  if (error) throw error;
+  const { error: upsertError } = await supabase
+    .from('cart_items')
+    .upsert(rows, { onConflict: 'user_id,product_id' });
+  if (upsertError) throw upsertError;
+
+  // Quote each id so PostgREST parses them as string literals regardless of
+  // content, matching how the underlying `.in()`/`.notIn()` helpers in
+  // postgrest-js escape values that contain reserved characters.
+  const productIds = lines.map((l) => `"${l.productId}"`);
+  const { error: deleteError } = await supabase
+    .from('cart_items')
+    .delete()
+    .eq('user_id', user.id)
+    .not('product_id', 'in', `(${productIds.join(',')})`);
+  if (deleteError) throw deleteError;
 }
