@@ -106,6 +106,7 @@ function CheckoutPageInner() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'No se pudo procesar el pago.');
+      if (!data.checkoutUrl) throw new Error('No se pudo iniciar el pago. Contacta con soporte.');
       if (data.trackingUrl) {
         window.localStorage.setItem('rpmfest_last_tracking_url', data.trackingUrl);
       }
@@ -163,14 +164,22 @@ function CheckoutPageInner() {
             className="flex flex-col gap-3"
           >
             <h1 className="text-xl font-black text-white-warm">Datos de envío</h1>
+            <label htmlFor="name" className="text-sm text-text-muted">
+              Nombre completo
+            </label>
             <input
+              id="name"
               required
               placeholder="Nombre completo"
               value={customer.name}
               onChange={(e) => setCustomer({ ...customer, name: e.target.value })}
               className="rounded-md border border-border-subtle bg-bg-dark p-3 text-white-warm"
             />
+            <label htmlFor="email" className="text-sm text-text-muted">
+              Email
+            </label>
             <input
+              id="email"
               required
               type="email"
               placeholder="Email"
@@ -178,21 +187,33 @@ function CheckoutPageInner() {
               onChange={(e) => setCustomer({ ...customer, email: e.target.value })}
               className="rounded-md border border-border-subtle bg-bg-dark p-3 text-white-warm"
             />
+            <label htmlFor="address" className="text-sm text-text-muted">
+              Dirección
+            </label>
             <input
+              id="address"
               required
               placeholder="Dirección"
               value={customer.address}
               onChange={(e) => setCustomer({ ...customer, address: e.target.value })}
               className="rounded-md border border-border-subtle bg-bg-dark p-3 text-white-warm"
             />
+            <label htmlFor="city" className="text-sm text-text-muted">
+              Ciudad
+            </label>
             <input
+              id="city"
               required
               placeholder="Ciudad"
               value={customer.city}
               onChange={(e) => setCustomer({ ...customer, city: e.target.value })}
               className="rounded-md border border-border-subtle bg-bg-dark p-3 text-white-warm"
             />
+            <label htmlFor="postalCode" className="text-sm text-text-muted">
+              Código postal
+            </label>
             <input
+              id="postalCode"
               required
               placeholder="Código postal"
               value={customer.postalCode}
