@@ -1,14 +1,5 @@
 {
   "version": 2,
-  "outputDirectory": ".",
-  "cleanUrls": true,
-  "trailingSlash": false,
-  "rewrites": [
-    { "source": "/panel", "destination": "/panel.html" },
-    { "source": "/panel/", "destination": "/panel.html" },
-    { "source": "/tienda", "destination": "/tienda.html" },
-    { "source": "/tienda/", "destination": "/tienda.html" }
-  ],
   "headers": [
     {
       "source": "/data/(.*)",

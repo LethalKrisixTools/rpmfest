@@ -3,4 +3,10 @@ node_modules/
 .DS_Store
 *.log
 .env
+.env*.local
 .vercel
+.superpowers/
+.worktrees/
+.next/
+*.tsbuildinfo
+next-env.d.ts
