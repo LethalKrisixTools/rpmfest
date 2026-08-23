@@ -38,10 +38,16 @@ export default function AdminProductosPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   async function loadProducts() {
-    const { data } = await supabase.from('products').select('*').order('name');
+    const { data, error: loadError } = await supabase.from('products').select('*').order('name');
+    if (loadError) {
+      console.error(loadError);
+      setError('No se pudieron cargar los productos.');
+      return;
+    }
     setProducts((data ?? []) as Product[]);
   }
 
@@ -68,17 +74,31 @@ export default function AdminProductosPage() {
   async function handleImageUpload(file: File) {
     setUploading(true);
     setError('');
-    const body = new FormData();
-    body.append('file', file);
-    const res = await fetch('/api/admin/productos/imagen', { method: 'POST', body });
-    setUploading(false);
-    if (!res.ok) {
-      const payload = await res.json();
-      setError(payload.error ?? 'Error al subir la imagen.');
-      return;
+    try {
+      const body = new FormData();
+      body.append('file', file);
+      const res = await fetch('/api/admin/productos/imagen', { method: 'POST', body });
+      let payload: { url?: string; error?: string } = {};
+      try {
+        payload = await res.json();
+      } catch {
+        setError('Respuesta inválida del servidor al subir la imagen.');
+        return;
+      }
+      if (!res.ok) {
+        setError(payload.error ?? 'Error al subir la imagen.');
+        return;
+      }
+      if (!payload.url) {
+        setError('Respuesta inválida del servidor al subir la imagen.');
+        return;
+      }
+      setForm((f) => ({ ...f, images: [...f.images, payload.url as string] }));
+    } catch {
+      setError('No se pudo subir la imagen. Inténtalo de nuevo.');
+    } finally {
+      setUploading(false);
     }
-    const { url } = await res.json();
-    setForm((f) => ({ ...f, images: [...f.images, url] }));
   }
 
   async function saveProduct(e: React.FormEvent) {
@@ -88,39 +108,60 @@ export default function AdminProductosPage() {
       setError('Slug, nombre y precio son obligatorios.');
       return;
     }
-    const payload = {
-      slug: form.slug,
-      name: form.name,
-      short_description: form.short_description || null,
-      description: form.description || null,
-      price_cents: Math.round(parseFloat(form.priceEuros) * 100),
-      stock: form.stock === '' ? null : parseInt(form.stock, 10),
-      category: form.category || null,
-      images: form.images,
-      active: form.active,
-      featured: form.featured
-    };
-
-    const { error: saveError } = form.id
-      ? await supabase.from('products').update(payload).eq('id', form.id)
-      : await supabase.from('products').insert(payload);
-
-    if (saveError) {
-      setError(saveError.message);
+    const priceCents = Math.round(parseFloat(form.priceEuros) * 100);
+    if (Number.isNaN(priceCents)) {
+      setError('El precio introducido no es válido.');
       return;
     }
-    setForm(EMPTY_FORM);
-    await loadProducts();
+    const stock = form.stock === '' ? null : parseInt(form.stock, 10);
+    if (stock !== null && Number.isNaN(stock)) {
+      setError('El stock introducido no es válido.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const payload = {
+        slug: form.slug,
+        name: form.name,
+        short_description: form.short_description || null,
+        description: form.description || null,
+        price_cents: priceCents,
+        stock,
+        category: form.category || null,
+        images: form.images,
+        active: form.active,
+        featured: form.featured
+      };
+
+      const { error: saveError } = form.id
+        ? await supabase.from('products').update(payload).eq('id', form.id)
+        : await supabase.from('products').insert(payload);
+
+      if (saveError) {
+        setError(saveError.message);
+        return;
+      }
+      setForm(EMPTY_FORM);
+      await loadProducts();
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function deleteProduct(id: string) {
     if (!window.confirm('¿Eliminar este producto?')) return;
-    const { error: deleteError } = await supabase.from('products').delete().eq('id', id);
-    if (deleteError) {
-      setError(deleteError.message);
-      return;
+    setError('');
+    setSaving(true);
+    try {
+      const { error: deleteError } = await supabase.from('products').delete().eq('id', id);
+      if (deleteError) {
+        setError(deleteError.message);
+        return;
+      }
+      await loadProducts();
+    } finally {
+      setSaving(false);
     }
-    await loadProducts();
   }
 
   return (
@@ -143,10 +184,15 @@ export default function AdminProductosPage() {
                 <td className="py-2">{formatCents(p.price_cents)}</td>
                 <td className="py-2">{p.stock ?? '—'}</td>
                 <td className="py-2 text-right">
-                  <button onClick={() => editProduct(p)} className="mr-3 text-gold underline">
+                  <button type="button" onClick={() => editProduct(p)} className="mr-3 text-gold underline">
                     Editar
                   </button>
-                  <button onClick={() => deleteProduct(p.id)} className="text-red-mid underline">
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => deleteProduct(p.id)}
+                    className="text-red-mid underline disabled:opacity-40"
+                  >
                     Eliminar
                   </button>
                 </td>
@@ -161,51 +207,83 @@ export default function AdminProductosPage() {
           {form.id ? 'Editar producto' : 'Nuevo producto'}
         </h2>
         <form onSubmit={saveProduct} className="flex flex-col gap-3">
+          <label htmlFor="slug" className="text-sm text-text-muted">
+            Slug
+          </label>
           <input
+            id="slug"
             placeholder="Slug (ej. camiseta-oficial-2026)"
             value={form.slug}
             onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
             className="rounded-md border border-border-subtle bg-bg-dark p-3 text-white-warm"
           />
+          <label htmlFor="name" className="text-sm text-text-muted">
+            Nombre
+          </label>
           <input
+            id="name"
             placeholder="Nombre"
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             className="rounded-md border border-border-subtle bg-bg-dark p-3 text-white-warm"
           />
+          <label htmlFor="short_description" className="text-sm text-text-muted">
+            Descripción corta
+          </label>
           <input
+            id="short_description"
             placeholder="Descripción corta"
             value={form.short_description}
             onChange={(e) => setForm((f) => ({ ...f, short_description: e.target.value }))}
             className="rounded-md border border-border-subtle bg-bg-dark p-3 text-white-warm"
           />
+          <label htmlFor="description" className="text-sm text-text-muted">
+            Descripción completa
+          </label>
           <textarea
+            id="description"
             placeholder="Descripción completa"
             value={form.description}
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             className="rounded-md border border-border-subtle bg-bg-dark p-3 text-white-warm"
             rows={4}
           />
+          <label htmlFor="priceEuros" className="text-sm text-text-muted">
+            Precio (€)
+          </label>
           <input
+            id="priceEuros"
             placeholder="Precio (€)"
             value={form.priceEuros}
             onChange={(e) => setForm((f) => ({ ...f, priceEuros: e.target.value }))}
             className="rounded-md border border-border-subtle bg-bg-dark p-3 text-white-warm"
           />
+          <label htmlFor="stock" className="text-sm text-text-muted">
+            Stock
+          </label>
           <input
+            id="stock"
             placeholder="Stock (vacío = ilimitado)"
             value={form.stock}
             onChange={(e) => setForm((f) => ({ ...f, stock: e.target.value }))}
             className="rounded-md border border-border-subtle bg-bg-dark p-3 text-white-warm"
           />
+          <label htmlFor="category" className="text-sm text-text-muted">
+            Categoría
+          </label>
           <input
+            id="category"
             placeholder="Categoría"
             value={form.category}
             onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
             className="rounded-md border border-border-subtle bg-bg-dark p-3 text-white-warm"
           />
 
+          <label htmlFor="image" className="text-sm text-text-muted">
+            Imagen
+          </label>
           <input
+            id="image"
             type="file"
             accept="image/png,image/jpeg,image/webp,image/svg+xml"
             disabled={uploading}
@@ -215,7 +293,12 @@ export default function AdminProductosPage() {
           {form.images.length > 0 && (
             <div className="flex gap-2">
               {form.images.map((url) => (
-                <img key={url} src={url} className="h-14 w-14 rounded-md border border-border-subtle" />
+                <img
+                  key={url}
+                  src={url}
+                  alt="Vista previa"
+                  className="h-14 w-14 rounded-md border border-border-subtle"
+                />
               ))}
             </div>
           )}
@@ -240,14 +323,19 @@ export default function AdminProductosPage() {
           {error && <p className="text-sm text-red-mid">{error}</p>}
 
           <div className="flex gap-3">
-            <button type="submit" className="rounded-md bg-gold px-4 py-3 text-sm font-bold text-bg-darkest">
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-md bg-gold px-4 py-3 text-sm font-bold text-bg-darkest disabled:opacity-40"
+            >
               {form.id ? 'GUARDAR CAMBIOS' : 'CREAR PRODUCTO'}
             </button>
             {form.id && (
               <button
                 type="button"
+                disabled={saving}
                 onClick={() => setForm(EMPTY_FORM)}
-                className="rounded-md border border-border-subtle px-4 py-3 text-sm font-bold text-white-warm"
+                className="rounded-md border border-border-subtle px-4 py-3 text-sm font-bold text-white-warm disabled:opacity-40"
               >
                 CANCELAR
               </button>
