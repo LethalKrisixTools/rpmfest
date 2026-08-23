@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 
@@ -24,8 +25,8 @@ export default function TerminosPage() {
         <h2 className="mt-6 font-bold text-white-warm">Envíos</h2>
         <p>
           Los plazos de envío se comunican tras la compra. Puedes consultar el estado de tu
-          pedido en <a href="/pedido" className="text-gold underline">/pedido</a> o desde{' '}
-          <a href="/cuenta" className="text-gold underline">Mi cuenta</a>.
+          pedido en <Link href="/pedido" className="text-gold underline">/pedido</Link> o desde{' '}
+          <Link href="/cuenta" className="text-gold underline">Mi cuenta</Link>.
         </p>
 
         <h2 className="mt-6 font-bold text-white-warm">Devoluciones</h2>

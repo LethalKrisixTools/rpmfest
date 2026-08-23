@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 
@@ -36,7 +37,7 @@ export default function PrivacidadPage() {
         <h2 className="mt-6 font-bold text-white-warm">Tus derechos</h2>
         <p>
           Puedes acceder, rectificar, descargar (portabilidad) o eliminar tus datos desde{' '}
-          <a href="/cuenta" className="text-gold underline">Mi cuenta</a>. Si compraste como
+          <Link href="/cuenta" className="text-gold underline">Mi cuenta</Link>. Si compraste como
           invitado y no tienes cuenta, escríbenos a{' '}
           <a href="mailto:privacidad@rpmfest.example" className="text-gold underline">
             privacidad@rpmfest.example
