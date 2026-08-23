@@ -3,10 +3,14 @@ import { formatCents } from '@/lib/money';
 
 export default async function AdminPedidosPage() {
   const supabase = createClient();
-  const { data: orders } = await supabase
+  const { data: orders, error } = await supabase
     .from('orders')
     .select('order_number, status, customer_name, customer_email, amount_cents, created_at')
     .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error al cargar pedidos:', error);
+  }
 
   return (
     <div>
