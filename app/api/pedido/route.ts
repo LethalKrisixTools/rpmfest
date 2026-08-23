@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   const admin = createAdminClient();
   let query = admin
     .from('orders')
-    .select('id, order_number, status, amount_cents, customer_name, created_at, paid_at');
+    .select('id, order_number, status, amount_cents, customer_name, customer_email, created_at, paid_at');
 
   if (token) {
     const verified = verifyTrackingToken(token);
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     }
     query = query.eq('id', verified.orderId);
   } else if (orderNumber && email) {
-    query = query.eq('order_number', orderNumber).eq('customer_email', email);
+    query = query.eq('order_number', orderNumber);
   } else {
     return NextResponse.json(
       { error: 'Necesitas el enlace de seguimiento o el número de pedido y email.' },
@@ -28,13 +28,23 @@ export async function GET(request: Request) {
     );
   }
 
-  const { data: order } = await query.single();
+  const { data: order, error: orderError } = await query.single();
+  if (orderError) {
+    console.error('pedido lookup: order query failed', orderError);
+  }
   if (!order) return NextResponse.json({ error: 'No se encontró el pedido.' }, { status: 404 });
 
-  const { data: items } = await admin
+  if (!token && orderNumber && email && order.customer_email?.toLowerCase() !== email) {
+    return NextResponse.json({ error: 'No se encontró el pedido.' }, { status: 404 });
+  }
+
+  const { data: items, error: itemsError } = await admin
     .from('order_items')
     .select('product_name, unit_price_cents, image, qty')
     .eq('order_id', order.id);
+  if (itemsError) {
+    console.error('pedido lookup: order_items query failed', itemsError);
+  }
 
   return NextResponse.json({
     orderNumber: order.order_number,
