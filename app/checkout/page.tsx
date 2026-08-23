@@ -91,17 +91,29 @@ function CheckoutPageInner() {
 
   const total = computeCartTotalCents(items, products);
 
+  function getOrCreateIdempotencyKey(): string {
+    const storageKey = 'rpmfest_checkout_idempotency_key';
+    if (typeof window === 'undefined') return crypto.randomUUID();
+    const existing = window.sessionStorage.getItem(storageKey);
+    if (existing) return existing;
+    const key = crypto.randomUUID();
+    window.sessionStorage.setItem(storageKey, key);
+    return key;
+  }
+
   async function submitPayment() {
     setSubmitting(true);
     setError('');
     try {
+      const idempotencyKey = getOrCreateIdempotencyKey();
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items,
           customer,
-          guestConsent: accountMode === 'guest' ? consent : undefined
+          guestConsent: accountMode === 'guest' ? consent : undefined,
+          idempotencyKey
         })
       });
       const data = await response.json();
@@ -109,6 +121,9 @@ function CheckoutPageInner() {
       if (!data.checkoutUrl) throw new Error('No se pudo iniciar el pago. Contacta con soporte.');
       if (data.trackingUrl) {
         window.localStorage.setItem('rpmfest_last_tracking_url', data.trackingUrl);
+      }
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.removeItem('rpmfest_checkout_idempotency_key');
       }
       window.location.href = data.checkoutUrl;
     } catch (err) {

@@ -16,7 +16,8 @@ const checkoutSchema = z.object({
     city: z.string().min(1),
     postalCode: z.string().min(1)
   }),
-  guestConsent: z.boolean().optional()
+  guestConsent: z.boolean().optional(),
+  idempotencyKey: z.string().uuid().optional()
 });
 
 export async function POST(request: Request) {
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: 'Datos de pedido inválidos.' }, { status: 400 });
   }
-  const { items, customer, guestConsent } = parsed.data;
+  const { items, customer, guestConsent, idempotencyKey } = parsed.data;
 
   const supabase = createClient();
   const {
@@ -59,7 +60,8 @@ export async function POST(request: Request) {
       p_shipping_postal_code: customer.postalCode,
       p_user_id: user?.id ?? null,
       p_privacy_consent_at: privacyConsentAt,
-      p_clear_cart: !!user
+      p_clear_cart: !!user,
+      p_idempotency_key: idempotencyKey ?? null
     });
 
     if (error) {
@@ -86,6 +88,7 @@ export async function POST(request: Request) {
 
   const origin = new URL(request.url).origin;
   const amount = (order.amount_cents / 100).toFixed(2);
+  const trackingToken = createTrackingToken(order.id);
 
   let payment: { id?: string; detail?: string; _links?: { checkout?: { href?: string } } } | null = null;
   let paymentOk = false;
@@ -100,7 +103,7 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         amount: { currency: order.currency, value: amount },
         description: `RPM Fest · Pedido ${order.order_number}`,
-        redirectUrl: `${origin}/checkout/confirmacion/${order.order_number}`,
+        redirectUrl: `${origin}/checkout/confirmacion/${trackingToken}`,
         webhookUrl: `${origin}/api/mollie-webhook`,
         metadata: { orderId: order.id, orderNumber: order.order_number }
       })
@@ -129,8 +132,6 @@ export async function POST(request: Request) {
   if (updatePaymentIdError) {
     console.error('checkout: failed to store mollie_payment_id', order.id, updatePaymentIdError);
   }
-
-  const trackingToken = createTrackingToken(order.id);
 
   return NextResponse.json({
     checkoutUrl: payment?._links?.checkout?.href,

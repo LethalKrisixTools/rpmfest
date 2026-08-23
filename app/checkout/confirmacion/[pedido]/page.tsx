@@ -4,16 +4,20 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { formatCents } from '@/lib/money';
+import { verifyTrackingToken } from '@/lib/tracking-token';
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
 export default async function ConfirmacionPage({ params }: { params: { pedido: string } }) {
+  const verified = verifyTrackingToken(params.pedido);
+  if (!verified) notFound();
+
   const admin = createAdminClient();
   const { data: order } = await admin
     .from('orders')
     .select('order_number, status, amount_cents, customer_name')
-    .eq('order_number', params.pedido)
+    .eq('id', verified.orderId)
     .single();
 
   if (!order) notFound();
