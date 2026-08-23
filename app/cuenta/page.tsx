@@ -47,27 +47,41 @@ export default function CuentaPage() {
     if (!profile) return;
     setSaving(true);
     setMessage('');
-    const supabase = createClient();
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        full_name: profile.full_name,
-        phone: profile.phone,
-        default_address: profile.default_address,
-        default_city: profile.default_city,
-        default_postal_code: profile.default_postal_code
-      })
-      .eq('id', profile.id);
-    setSaving(false);
-    setMessage(error ? 'No se pudo guardar.' : 'Guardado.');
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: profile.full_name,
+          phone: profile.phone,
+          default_address: profile.default_address,
+          default_city: profile.default_city,
+          default_postal_code: profile.default_postal_code
+        })
+        .eq('id', profile.id);
+      setMessage(error ? 'No se pudo guardar.' : 'Guardado.');
+    } catch {
+      setMessage('No se pudo guardar. Inténtalo de nuevo.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function deleteAccount() {
     if (!window.confirm('¿Seguro que quieres eliminar tu cuenta? Esta acción no se puede deshacer.')) {
       return;
     }
-    const response = await fetch('/api/cuenta/eliminar', { method: 'POST' });
-    if (response.ok) router.push('/');
+    try {
+      const response = await fetch('/api/cuenta/eliminar', { method: 'POST' });
+      if (response.ok) {
+        router.push('/');
+        return;
+      }
+      const data = await response.json();
+      setMessage(data.error || 'No se pudo eliminar la cuenta.');
+    } catch {
+      setMessage('No se pudo eliminar la cuenta. Inténtalo de nuevo.');
+    }
   }
 
   if (!profile) return null;
@@ -79,31 +93,51 @@ export default function CuentaPage() {
         <h1 className="mb-6 text-2xl font-black text-white-warm">Mi cuenta</h1>
 
         <form onSubmit={saveProfile} className="flex flex-col gap-3">
+          <label htmlFor="full_name" className="text-sm text-text-muted">
+            Nombre completo
+          </label>
           <input
+            id="full_name"
             placeholder="Nombre completo"
             value={profile.full_name ?? ''}
             onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
             className="rounded-md border border-border-subtle bg-bg-dark p-3 text-white-warm"
           />
+          <label htmlFor="phone" className="text-sm text-text-muted">
+            Teléfono
+          </label>
           <input
+            id="phone"
             placeholder="Teléfono"
             value={profile.phone ?? ''}
             onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
             className="rounded-md border border-border-subtle bg-bg-dark p-3 text-white-warm"
           />
+          <label htmlFor="default_address" className="text-sm text-text-muted">
+            Dirección
+          </label>
           <input
+            id="default_address"
             placeholder="Dirección"
             value={profile.default_address ?? ''}
             onChange={(e) => setProfile({ ...profile, default_address: e.target.value })}
             className="rounded-md border border-border-subtle bg-bg-dark p-3 text-white-warm"
           />
+          <label htmlFor="default_city" className="text-sm text-text-muted">
+            Ciudad
+          </label>
           <input
+            id="default_city"
             placeholder="Ciudad"
             value={profile.default_city ?? ''}
             onChange={(e) => setProfile({ ...profile, default_city: e.target.value })}
             className="rounded-md border border-border-subtle bg-bg-dark p-3 text-white-warm"
           />
+          <label htmlFor="default_postal_code" className="text-sm text-text-muted">
+            Código postal
+          </label>
           <input
+            id="default_postal_code"
             placeholder="Código postal"
             value={profile.default_postal_code ?? ''}
             onChange={(e) => setProfile({ ...profile, default_postal_code: e.target.value })}
