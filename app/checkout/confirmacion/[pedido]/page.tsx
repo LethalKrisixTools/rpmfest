@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { formatCents } from '@/lib/money';
 
 export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 
 export default async function ConfirmacionPage({ params }: { params: { pedido: string } }) {
   const admin = createAdminClient();
