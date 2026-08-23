@@ -1,8 +1,11 @@
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { formatCents } from '@/lib/money';
+
+export const dynamic = 'force-dynamic';
 
 export default async function ConfirmacionPage({ params }: { params: { pedido: string } }) {
   const admin = createAdminClient();
@@ -31,7 +34,7 @@ export default async function ConfirmacionPage({ params }: { params: { pedido: s
         <p className="mt-1 text-white-warm">Total: {formatCents(order.amount_cents)}</p>
         <p className="mt-6 text-sm text-text-muted">
           Guarda este número de pedido para consultarlo en{' '}
-          <a href="/pedido" className="text-gold underline">/pedido</a>.
+          <Link href="/pedido" className="text-gold underline">/pedido</Link>.
         </p>
       </main>
       <Footer />
