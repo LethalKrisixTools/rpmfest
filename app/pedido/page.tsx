@@ -29,17 +29,26 @@ function PedidoPageInner() {
   const [order, setOrder] = useState<OrderSummary | null>(null);
   const [error, setError] = useState('');
   const [lastTrackingUrl, setLastTrackingUrl] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   async function lookup(query: string) {
+    if (submitting) return;
     setError('');
     setOrder(null);
-    const response = await fetch(`/api/pedido?${query}`);
-    const data = await response.json();
-    if (!response.ok) {
-      setError(data.error || 'No se encontró el pedido.');
-      return;
+    setSubmitting(true);
+    try {
+      const response = await fetch(`/api/pedido?${query}`);
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.error || 'No se encontró el pedido.');
+        return;
+      }
+      setOrder(data);
+    } catch {
+      setError('No se pudo consultar el pedido. Inténtalo de nuevo.');
+    } finally {
+      setSubmitting(false);
     }
-    setOrder(data);
   }
 
   useEffect(() => {
@@ -67,14 +76,22 @@ function PedidoPageInner() {
           }}
           className="mt-6 flex flex-col gap-3"
         >
+          <label htmlFor="orderNumber" className="text-sm text-text-muted">
+            Número de pedido
+          </label>
           <input
+            id="orderNumber"
             required
             placeholder="Número de pedido (RPM-2026-XXXXX)"
             value={orderNumber}
             onChange={(e) => setOrderNumber(e.target.value)}
             className="rounded-md border border-border-subtle bg-bg-dark p-3 text-white-warm"
           />
+          <label htmlFor="email" className="text-sm text-text-muted">
+            Email usado en la compra
+          </label>
           <input
+            id="email"
             required
             type="email"
             placeholder="Email usado en la compra"
@@ -82,7 +99,11 @@ function PedidoPageInner() {
             onChange={(e) => setEmail(e.target.value)}
             className="rounded-md border border-border-subtle bg-bg-dark p-3 text-white-warm"
           />
-          <button type="submit" className="rounded-md bg-gold px-4 py-3 text-sm font-bold text-bg-darkest">
+          <button
+            type="submit"
+            disabled={submitting}
+            className="rounded-md bg-gold px-4 py-3 text-sm font-bold text-bg-darkest disabled:opacity-40"
+          >
             BUSCAR PEDIDO
           </button>
         </form>
