@@ -6,7 +6,7 @@
   let data;
 
   try {
-    const res = await fetch('data/data.json?_=' + Date.now());
+    const res = await fetch('/api/evento?_=' + Date.now());
     if (!res.ok) throw new Error('Not found');
     data = await res.json();
   } catch {
