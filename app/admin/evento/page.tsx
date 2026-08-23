@@ -104,25 +104,32 @@ function ListEditor({
         {rows.map((row, i) => (
           <div key={row.id ?? `new-${i}`} className="rounded-md border border-border-subtle bg-bg-dark p-4">
             <div className="flex flex-col gap-2">
-              {fields.map((f) => (
-                <div key={f.key}>
-                  <label className="text-sm text-text-muted">{f.label}</label>
-                  {f.type === 'textarea' ? (
-                    <textarea
-                      value={row.values[f.key] ?? ''}
-                      onChange={(e) => onChange(i, f.key, e.target.value)}
-                      rows={2}
-                      className="w-full rounded-md border border-border-subtle bg-bg-darkest p-2 text-white-warm"
-                    />
-                  ) : (
-                    <input
-                      value={row.values[f.key] ?? ''}
-                      onChange={(e) => onChange(i, f.key, e.target.value)}
-                      className="w-full rounded-md border border-border-subtle bg-bg-darkest p-2 text-white-warm"
-                    />
-                  )}
-                </div>
-              ))}
+              {fields.map((f) => {
+                const fieldId = `${title}-${i}-${f.key}`;
+                return (
+                  <div key={f.key}>
+                    <label htmlFor={fieldId} className="text-sm text-text-muted">
+                      {f.label}
+                    </label>
+                    {f.type === 'textarea' ? (
+                      <textarea
+                        id={fieldId}
+                        value={row.values[f.key] ?? ''}
+                        onChange={(e) => onChange(i, f.key, e.target.value)}
+                        rows={2}
+                        className="w-full rounded-md border border-border-subtle bg-bg-darkest p-2 text-white-warm"
+                      />
+                    ) : (
+                      <input
+                        id={fieldId}
+                        value={row.values[f.key] ?? ''}
+                        onChange={(e) => onChange(i, f.key, e.target.value)}
+                        className="w-full rounded-md border border-border-subtle bg-bg-darkest p-2 text-white-warm"
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
             <button type="button" onClick={() => onRemove(i)} className="mt-2 text-sm text-red-mid underline">
               Eliminar
@@ -237,7 +244,12 @@ export default function AdminEventoPage() {
     setter((prev) => prev.filter((_, i) => i !== index));
   }
 
-  async function saveList(table: string, rows: ListRow[], original: string[]) {
+  async function saveList(
+    table: string,
+    rows: ListRow[],
+    original: string[],
+    setter: React.Dispatch<React.SetStateAction<ListRow[]>>
+  ) {
     const currentIds = rows.filter((r) => r.id).map((r) => r.id as string);
     const toDelete = original.filter((id) => !currentIds.includes(id));
     if (toDelete.length > 0) {
@@ -251,8 +263,14 @@ export default function AdminEventoPage() {
         const { error: updateError } = await supabase.from(table).update(payload).eq('id', row.id);
         if (updateError) throw updateError;
       } else {
-        const { error: insertError } = await supabase.from(table).insert(payload);
+        const { data: inserted, error: insertError } = await supabase
+          .from(table)
+          .insert(payload)
+          .select('id')
+          .single();
         if (insertError) throw insertError;
+        const newId = inserted.id as string;
+        setter((prev) => prev.map((r, idx) => (idx === i ? { ...r, id: newId } : r)));
       }
     }
   }
@@ -260,15 +278,22 @@ export default function AdminEventoPage() {
   async function saveAll() {
     setError('');
     setSuccess(false);
+
+    const emptyField = CONFIG_FIELDS.find((f) => !configForm[f.key].trim());
+    if (emptyField) {
+      setError(`El campo "${emptyField.label}" no puede estar vacío.`);
+      return;
+    }
+
     setSaving(true);
     try {
       const { error: configError } = await supabase.from('event_config').update(configForm).eq('id', 1);
       if (configError) throw configError;
 
-      await saveList('event_activities', activities, originalIds.activities);
-      await saveList('event_schedule', schedule, originalIds.schedule);
-      await saveList('event_stats', stats, originalIds.stats);
-      await saveList('event_sponsors', sponsors, originalIds.sponsors);
+      await saveList('event_activities', activities, originalIds.activities, setActivities);
+      await saveList('event_schedule', schedule, originalIds.schedule, setSchedule);
+      await saveList('event_stats', stats, originalIds.stats, setStats);
+      await saveList('event_sponsors', sponsors, originalIds.sponsors, setSponsors);
 
       await loadAll();
       setSuccess(true);
@@ -315,7 +340,9 @@ export default function AdminEventoPage() {
         fields={ACTIVITY_FIELDS}
         onChange={(i, k, v) => updateRow(setActivities, i, k, v)}
         onAdd={() => addRow(setActivities, ['icon', 'title', 'description', 'tag'])}
-        onRemove={(i) => removeRow(setActivities, i)}
+        onRemove={(i) => {
+          if (window.confirm('¿Eliminar este elemento?')) removeRow(setActivities, i);
+        }}
       />
 
       <ListEditor
@@ -324,7 +351,9 @@ export default function AdminEventoPage() {
         fields={SCHEDULE_FIELDS}
         onChange={(i, k, v) => updateRow(setSchedule, i, k, v)}
         onAdd={() => addRow(setSchedule, ['time', 'title', 'description'])}
-        onRemove={(i) => removeRow(setSchedule, i)}
+        onRemove={(i) => {
+          if (window.confirm('¿Eliminar este elemento?')) removeRow(setSchedule, i);
+        }}
       />
 
       <ListEditor
@@ -333,7 +362,9 @@ export default function AdminEventoPage() {
         fields={STAT_FIELDS}
         onChange={(i, k, v) => updateRow(setStats, i, k, v)}
         onAdd={() => addRow(setStats, ['number', 'label'])}
-        onRemove={(i) => removeRow(setStats, i)}
+        onRemove={(i) => {
+          if (window.confirm('¿Eliminar este elemento?')) removeRow(setStats, i);
+        }}
       />
 
       <ListEditor
@@ -342,7 +373,9 @@ export default function AdminEventoPage() {
         fields={SPONSOR_FIELDS}
         onChange={(i, k, v) => updateRow(setSponsors, i, k, v)}
         onAdd={() => addRow(setSponsors, ['name', 'subtitle'])}
-        onRemove={(i) => removeRow(setSponsors, i)}
+        onRemove={(i) => {
+          if (window.confirm('¿Eliminar este elemento?')) removeRow(setSponsors, i);
+        }}
       />
 
       {error && <p className="mt-4 text-sm text-red-mid">{error}</p>}
