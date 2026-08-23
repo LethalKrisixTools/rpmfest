@@ -3,12 +3,25 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { verifyTrackingToken } from '@/lib/tracking-token';
 
 export async function GET(request: Request) {
+  const admin = createAdminClient();
+
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  const { data: allowed, error: rateLimitError } = await admin.rpc('check_rate_limit', {
+    p_key: `pedido:${ip}`,
+    p_max_attempts: 20,
+    p_window_seconds: 600
+  });
+  if (rateLimitError) {
+    console.error('pedido lookup: rate limit check failed', rateLimitError);
+  } else if (allowed === false) {
+    return NextResponse.json({ error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.' }, { status: 429 });
+  }
+
   const { searchParams } = new URL(request.url);
   const token = searchParams.get('token');
   const orderNumber = searchParams.get('order');
   const email = searchParams.get('email')?.toLowerCase();
 
-  const admin = createAdminClient();
   let query = admin
     .from('orders')
     .select('id, order_number, status, amount_cents, customer_name, customer_email, created_at, paid_at');
