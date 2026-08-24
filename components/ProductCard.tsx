@@ -3,7 +3,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { addToGuestCart } from '@/lib/cart';
+import { useState } from 'react';
+import { addToCart } from '@/lib/add-to-cart';
 import { formatCents } from '@/lib/money';
 import type { Product } from '@/lib/types';
 
@@ -11,6 +12,19 @@ export function ProductCard({ product }: { product: Product }) {
   const router = useRouter();
   const soldOut = product.stock !== null && product.stock <= 0;
   const image = product.images[0] ?? '/assets/product-placeholder.svg';
+  const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState(false);
+
+  async function handleAdd() {
+    setAdding(true);
+    try {
+      await addToCart(product.id, 1);
+      setAdded(true);
+      setTimeout(() => setAdded(false), 1500);
+    } finally {
+      setAdding(false);
+    }
+  }
 
   return (
     <article className="flex flex-col overflow-hidden rounded-xl border border-border-subtle bg-bg-dark">
@@ -50,11 +64,11 @@ export function ProductCard({ product }: { product: Product }) {
           </button>
           <button
             type="button"
-            disabled={soldOut}
-            onClick={() => addToGuestCart(product.id, 1)}
+            disabled={soldOut || adding}
+            onClick={handleAdd}
             className="rounded-md border border-border-subtle px-4 py-3 text-sm font-bold text-white-warm disabled:opacity-40"
           >
-            + AÑADIR AL CARRITO
+            {added ? 'AÑADIDO ✓' : '+ AÑADIR AL CARRITO'}
           </button>
         </div>
       </div>
