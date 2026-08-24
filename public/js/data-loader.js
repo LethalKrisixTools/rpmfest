@@ -50,17 +50,6 @@
   const ctaDisabled = document.querySelector('.btn-disabled');
   if (ctaDisabled && c.ctaStatus) ctaDisabled.textContent = c.ctaStatus;
 
-  // Add store link without changing the existing page markup.
-  const navLinks = document.querySelector('.nav-links');
-  if (navLinks && !navLinks.querySelector('a[href="tienda"], a[href="tienda.html"]')) {
-    const li = document.createElement('li');
-    const a = document.createElement('a');
-    a.href = 'tienda';
-    a.textContent = 'Tienda';
-    li.appendChild(a);
-    navLinks.appendChild(li);
-  }
-
   // Evento section
   const sectionDesc = document.querySelector('#evento .section-desc');
   if (sectionDesc && c.descShort) sectionDesc.textContent = c.descShort;
