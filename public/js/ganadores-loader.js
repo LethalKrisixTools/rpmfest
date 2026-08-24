@@ -9,7 +9,7 @@
   function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str ?? '';
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
   let data;
@@ -36,7 +36,7 @@
           const winnerHtml = w
             ? `
               <div class="winner-card">
-                ${w.image_url ? `<img src="${w.image_url}" alt="${escapeHtml(w.car_name)}" class="winner-photo">` : ''}
+                ${w.image_url ? `<img src="${escapeHtml(w.image_url)}" alt="${escapeHtml(w.car_name)}" class="winner-photo">` : ''}
                 <div class="winner-info">
                   <p class="winner-person">${escapeHtml(w.person_name)}</p>
                   <p class="winner-car">${escapeHtml(w.car_name)}</p>
