@@ -12,7 +12,8 @@ const nextConfig = {
   async rewrites() {
     return [
       { source: '/', destination: '/index.html' },
-      { source: '/eventos', destination: '/eventos.html' }
+      { source: '/eventos', destination: '/eventos.html' },
+      { source: '/ganadores', destination: '/ganadores.html' }
     ];
   }
 };

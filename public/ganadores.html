@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RPM Fest — Próximos Eventos</title>
+  <title>RPM Fest — Ganadores</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/ganadores.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Bebas+Neue&display=swap" rel="stylesheet">
 </head>
@@ -23,19 +24,21 @@
         <li><a href="index.html#experiencias">Experiencias</a></li>
         <li><a href="index.html#horarios">Horarios</a></li>
         <li><a href="index.html#ubicacion">Ubicación</a></li>
-        <li><a href="eventos.html" class="active">Próximos Eventos</a></li>
-        <li><a href="ganadores.html">Ganadores</a></li>
+        <li><a href="eventos.html">Próximos Eventos</a></li>
+        <li><a href="ganadores.html" class="active">Ganadores</a></li>
       </ul>
     </div>
   </nav>
 
-  <section class="section section-fourvenues first-section">
+  <section class="section first-section">
     <div class="container">
       <div class="section-header">
-        <span class="section-tag">FOURVENUES</span>
-        <h2 class="section-title">Próximos <span class="gold">Eventos</span></h2>
+        <span class="section-tag">PALMARÉS</span>
+        <h2 class="section-title">Ganadores de <span class="gold">Ediciones Anteriores</span></h2>
       </div>
-      <script src="https://www.fourvenues.com/assets/iframe/diamond-squad-events/events"></script>
+      <div id="ganadores-content" class="ganadores-content">
+        <p class="ganadores-empty">Cargando…</p>
+      </div>
     </div>
   </section>
 
@@ -59,6 +62,7 @@
     </div>
   </footer>
 
+  <script src="js/ganadores-loader.js"></script>
   <script>
     document.querySelector('.nav-toggle')?.addEventListener('click', () => {
       document.querySelector('.nav-links')?.classList.toggle('open');
