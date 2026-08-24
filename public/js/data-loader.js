@@ -3,6 +3,12 @@
 // ============================================
 
 (async function loadData() {
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str ?? '';
+    return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
   let data;
 
   try {
@@ -26,7 +32,7 @@
     const parts = c.title.split(/\s+/);
     if (parts.length > 1) {
       const last = parts.pop();
-      heroTitle.innerHTML = parts.join(' ') + ' <span class="gold">' + last + '</span>';
+      heroTitle.innerHTML = escapeHtml(parts.join(' ')) + ' <span class="gold">' + escapeHtml(last) + '</span>';
     } else {
       heroTitle.textContent = c.title;
     }
@@ -96,7 +102,7 @@
   // Quote
   const quoteEl = document.querySelector('.banner-quote p');
   if (quoteEl && c.quote) {
-    quoteEl.innerHTML = '&ldquo;' + c.quote + '&rdquo;';
+    quoteEl.innerHTML = '&ldquo;' + escapeHtml(c.quote) + '&rdquo;';
   }
 
   // Schedule
@@ -135,7 +141,7 @@
   if (locTitle && c.location) locTitle.textContent = c.location;
 
   const locAddr = document.querySelector('.location-address p');
-  if (locAddr && c.address) locAddr.innerHTML = c.address.replace(/\\n/g, '<br>');
+  if (locAddr && c.address) locAddr.innerHTML = escapeHtml(c.address).replace(/\\n/g, '<br>');
 
   const dressVal = document.querySelector('.loc-detail .loc-value');
   if (dressVal && c.dressCode) dressVal.textContent = c.dressCode;
@@ -146,7 +152,7 @@
     const parts = c.name.split(/\s+/);
     if (parts.length > 1) {
       const last = parts.pop();
-      footerLogo.innerHTML = parts.join(' ') + '<span class="gold">' + last + '</span>';
+      footerLogo.innerHTML = escapeHtml(parts.join(' ')) + '<span class="gold">' + escapeHtml(last) + '</span>';
     }
   }
 
@@ -158,6 +164,6 @@
   const footerBottom = document.querySelector('.footer-bottom p');
   if (footerBottom && c.organizer) {
     const year = new Date().getFullYear();
-    footerBottom.innerHTML = '&copy; ' + year + ' ' + c.organizer + '. Todos los derechos reservados.';
+    footerBottom.innerHTML = '&copy; ' + year + ' ' + escapeHtml(c.organizer) + '. Todos los derechos reservados.';
   }
 })();
