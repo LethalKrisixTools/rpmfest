@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 
-export const dynamic = 'force-dynamic';
-export const fetchCache = 'force-no-store';
+export const revalidate = 30;
 
 type WinnerRow = { category_id: string; person_name: string; car_name: string; car_info: string; image_url: string | null };
 type CategoryOut = { id: string; name: string; winner: Omit<WinnerRow, 'category_id'> | null };
