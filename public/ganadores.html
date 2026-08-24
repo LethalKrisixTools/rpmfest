@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RPM Fest — Ganadores</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/ganadores.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo">
+        <img src="logo-rpmfest.png" alt="RPM Fest" class="nav-logo-img">
+      </a>
+      <button class="nav-toggle" aria-label="Menú">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links">
+        <li><a href="index.html#evento">Evento</a></li>
+        <li><a href="index.html#experiencias">Experiencias</a></li>
+        <li><a href="index.html#horarios">Horarios</a></li>
+        <li><a href="index.html#ubicacion">Ubicación</a></li>
+        <li><a href="eventos.html">Próximos Eventos</a></li>
+        <li><a href="ganadores.html" class="active">Ganadores</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <section class="section first-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">PALMARÉS</span>
+        <h2 class="section-title">Ganadores de <span class="gold">Ediciones Anteriores</span></h2>
+      </div>
+      <div id="ganadores-content" class="ganadores-content">
+        <p class="ganadores-empty">Cargando…</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-main">
+        <div class="footer-brand">
+          <div class="footer-logo">RPM<span class="gold">FEST</span></div>
+          <p class="footer-desc">Un festival del motor como ningún otro. Organizado por Diamond Squad Events.</p>
+        </div>
+        <div class="footer-links-col">
+          <h4>Legal</h4>
+          <a href="https://web.fourvenues.com/es/legal/aviso-legal" target="_blank">Aviso Legal</a>
+          <a href="https://web.fourvenues.com/es/legal/politica-de-cookies" target="_blank">Política de Cookies</a>
+          <a href="https://web.fourvenues.com/es/legal/politica-de-privacidad" target="_blank">Política de Privacidad</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Diamond Squad Events. Todos los derechos reservados.</p>
+    </div>
+  </footer>
+
+  <script src="js/ganadores-loader.js"></script>
+  <script>
+    document.querySelector('.nav-toggle')?.addEventListener('click', () => {
+      document.querySelector('.nav-links')?.classList.toggle('open');
+    });
+  </script>
+</body>
+</html>
