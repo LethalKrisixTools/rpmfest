@@ -1,5 +1,4 @@
 import { addToGuestCart } from './cart';
-import { fetchAccountCart, upsertAccountCartLine } from './cart-sync';
 import { createClient } from './supabase/client';
 
 /**
@@ -18,9 +17,10 @@ export async function addToCart(productId: string, qty: number): Promise<void> {
     return;
   }
 
-  const currentLines = await fetchAccountCart();
-  const existing = currentLines.find((l) => l.productId === productId);
-  const newQty = (existing?.qty ?? 0) + qty;
-  await upsertAccountCartLine(productId, newQty);
+  const { error } = await supabase.rpc('increment_cart_item', {
+    p_product_id: productId,
+    p_qty: qty
+  });
+  if (error) throw error;
   window.dispatchEvent(new Event('rpmfest:cart-updated'));
 }
