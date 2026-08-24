@@ -82,8 +82,9 @@ export default function AdminGanadoresPage() {
   async function createEdition(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+    const name = newEditionName.trim();
     const year = parseInt(newEditionYear, 10);
-    if (!newEditionName || Number.isNaN(year)) {
+    if (!name || Number.isNaN(year)) {
       setError('Nombre y año de la edición son obligatorios.');
       return;
     }
@@ -91,7 +92,7 @@ export default function AdminGanadoresPage() {
     try {
       const { error: insertError } = await supabase
         .from('award_editions')
-        .insert({ name: newEditionName, year, sort_order: 0 });
+        .insert({ name, year, sort_order: 0 });
       if (insertError) {
         setError(insertError.message);
         return;
@@ -187,25 +188,26 @@ export default function AdminGanadoresPage() {
 
   async function saveWinner(categoryId: string) {
     const draft = draftFor(categoryId);
-    if (!draft.person_name || !draft.car_name) {
+    const personName = draft.person_name.trim();
+    const carName = draft.car_name.trim();
+    if (!personName || !carName) {
       setError('Nombre del ganador y coche son obligatorios.');
       return;
     }
     setError('');
     setSaving(true);
     try {
-      const existing = winners.find((w) => w.category_id === categoryId);
       const payload = {
         category_id: categoryId,
-        person_name: draft.person_name,
-        car_name: draft.car_name,
+        person_name: personName,
+        car_name: carName,
         car_info: draft.car_info,
         image_url: draft.image_url,
         rank: 1
       };
-      const { error: saveError } = existing
-        ? await supabase.from('award_winners').update(payload).eq('id', existing.id)
-        : await supabase.from('award_winners').insert(payload);
+      const { error: saveError } = await supabase
+        .from('award_winners')
+        .upsert(payload, { onConflict: 'category_id' });
       if (saveError) {
         setError(saveError.message);
         return;
