@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { addToGuestCart } from '@/lib/cart';
+import { addToCart } from '@/lib/add-to-cart';
 import { QuantityPicker } from './QuantityPicker';
 import type { Product } from '@/lib/types';
 
@@ -10,6 +10,19 @@ export function ProductActions({ product }: { product: Product }) {
   const router = useRouter();
   const [qty, setQty] = useState(1);
   const soldOut = product.stock !== null && product.stock <= 0;
+  const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState(false);
+
+  async function handleAdd() {
+    setAdding(true);
+    try {
+      await addToCart(product.id, qty);
+      setAdded(true);
+      setTimeout(() => setAdded(false), 1500);
+    } finally {
+      setAdding(false);
+    }
+  }
 
   return (
     <div>
@@ -25,11 +38,11 @@ export function ProductActions({ product }: { product: Product }) {
         </button>
         <button
           type="button"
-          disabled={soldOut}
-          onClick={() => addToGuestCart(product.id, qty)}
+          disabled={soldOut || adding}
+          onClick={handleAdd}
           className="rounded-md border border-border-subtle px-4 py-3 text-sm font-bold text-white-warm disabled:opacity-40"
         >
-          AÑADIR AL CARRITO
+          {added ? 'AÑADIDO ✓' : 'AÑADIR AL CARRITO'}
         </button>
       </div>
     </div>
