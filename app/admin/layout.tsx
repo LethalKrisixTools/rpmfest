@@ -17,6 +17,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/admin/pedidos" className="hover:text-gold">
             Pedidos
           </Link>
+          <Link href="/admin/evento" className="hover:text-gold">
+            Evento
+          </Link>
+          <Link href="/admin/ganadores" className="hover:text-gold">
+            Ganadores
+          </Link>
         </nav>
         <span className="text-xs text-text-muted">{user?.email}</span>
       </header>
