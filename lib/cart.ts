@@ -2,6 +2,12 @@ import type { CartLine } from './types';
 
 const CART_KEY = 'rpmfest_guest_cart';
 
+function notifyCartChange(): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('rpmfest:cart-updated'));
+  }
+}
+
 export function getGuestCart(): CartLine[] {
   if (typeof window === 'undefined') return [];
   try {
@@ -21,11 +27,13 @@ export function setGuestCart(lines: CartLine[]): void {
   } catch {
     // Storage full or unavailable (e.g. Safari private browsing) — fail silently.
   }
+  notifyCartChange();
 }
 
 export function clearGuestCart(): void {
   if (typeof window === 'undefined') return;
   window.localStorage.removeItem(CART_KEY);
+  notifyCartChange();
 }
 
 export function addToGuestCart(productId: string, qty = 1): CartLine[] {
