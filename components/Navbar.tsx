@@ -89,7 +89,7 @@ export function Navbar() {
           <li className={navItemClass}>
             <Link
               href="/cesta"
-              className={`${linkClass} flex translate-y-px items-center gap-1.5 max-md:flex max-md:translate-y-0`}
+              className={`${linkClass} flex translate-y-[2px] items-center gap-1.5 max-md:flex max-md:translate-y-0`}
               onClick={() => setMenuOpen(false)}
             >
               Cesta
